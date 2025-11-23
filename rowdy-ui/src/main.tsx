@@ -1,13 +1,16 @@
+// src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import "./firebase";
 import App from "./App";
-import Match from "./routes/Match"; // path + casing must match the file
+import Match from "./routes/Match";
+import Round from "./routes/Round"; // Import new component
 
 const router = createBrowserRouter([
-  { path: "/", element: <App /> }, // App now contains the Leaderboard + Matches
+  { path: "/", element: <App /> },
+  { path: "/round/:roundId", element: <Round /> }, // New Route
   { path: "/match/:matchId", element: <Match /> },
 ]);
 
