@@ -302,7 +302,7 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
     const myTeamId = team === "teamA" ? teamAId : teamBId;
     const oppTeamId = team === "teamA" ? teamBId : teamAId;
 
-    // --- NEW LOGIC START ---
+    // --- EXTRACT IDS AND TIERS ---
     const opponentIds: string[] = [];
     const opponentTiers: string[] = [];
 
@@ -313,12 +313,6 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       }
     });
 
-    // Maintain backwards compatibility for Singles queries
-    // If there is exactly 1 opponent, fill the singular fields. Otherwise null.
-    const legacyOpponentId = opponentIds.length === 1 ? opponentIds[0] : null;
-    const legacyOpponentTier = opponentTiers.length === 1 ? opponentTiers[0] : null;
-    // --- NEW LOGIC END ---
-
     batch.set(db.collection("playerMatchFacts").doc(`${matchId}_${p.playerId}`), {
       playerId: p.playerId, matchId, tournamentId: tId, roundId: rId, format,
       outcome, pointsEarned: pts,
@@ -327,13 +321,11 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       playerTeamId: myTeamId,
       opponentTeamId: oppTeamId,
       
-      // New Arrays
+      // ARRAYS ONLY (Source of Truth)
       opponentIds,
       opponentTiers,
 
-      // Legacy/Singular fields (kept for safety/convenience)
-      opponentId: legacyOpponentId,
-      opponentTier: legacyOpponentTier,
+      // REMOVED: opponentId, opponentTier
 
       finalMargin: status.margin || 0,
       finalThru: status.thru || 18,

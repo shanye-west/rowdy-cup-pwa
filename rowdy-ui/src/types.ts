@@ -93,10 +93,6 @@ export type PlayerMatchFact = {
   opponentIds?: string[];
   opponentTiers?: string[];
 
-  // Legacy/Singular fields
-  opponentId?: string | null;
-  opponentTier?: string | null;
-
   finalMargin?: number;
   finalThru?: number;
   updatedAt?: any; // Firestore Timestamp

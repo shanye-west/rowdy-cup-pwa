@@ -41,11 +41,10 @@ export function formatMatchStatus(
 import type { PlayerMatchFact } from "./types";
 
 /**
- * Extracts a normalized list of opponents from a match fact,
- * handling both single (legacy/1v1) and team formats.
+ * Extracts a normalized list of opponents from a match fact.
+ * Strictly uses the 'opponentIds' array as the source of truth.
  */
 export function getOpponents(fact: PlayerMatchFact): { id: string; tier: string }[] {
-  // 1. Try the new array fields first
   if (fact.opponentIds && fact.opponentIds.length > 0) {
     return fact.opponentIds.map((id, index) => ({
       id,
@@ -53,15 +52,5 @@ export function getOpponents(fact: PlayerMatchFact): { id: string; tier: string 
       tier: fact.opponentTiers?.[index] || "Unknown",
     }));
   }
-
-  // 2. Fallback to singular field (for old data or singles)
-  if (fact.opponentId) {
-    return [{ 
-      id: fact.opponentId, 
-      tier: fact.opponentTier || "Unknown" 
-    }];
-  }
-
-  // 3. No opponents found (shouldn't happen in valid match)
   return [];
 }
