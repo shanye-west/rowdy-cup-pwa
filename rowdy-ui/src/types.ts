@@ -104,3 +104,12 @@ export type PlayerMatchFact = {
   finalThru?: number;
   updatedAt?: any;
 };
+
+export type PlayerStatDoc = {
+  id: string; // matches playerId
+  wins: number;
+  losses: number;
+  halves: number;
+  totalPoints: number;
+  matchesPlayed: number;
+};
