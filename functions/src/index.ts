@@ -300,7 +300,7 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   
   // 1. Fetch Context (Format & Tiers)
   let format = "unknown";
-  let rosterByTier: Record<string, string> = {};
+  let playerTiers: Record<string, string> = {};
 
   if (roundId) {
     const rSnap = await db.collection("rounds").doc(roundId).get();
@@ -310,7 +310,8 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   if (tournamentId) {
     const tSnap = await db.collection("tournaments").doc(tournamentId).get();
     if (tSnap.exists) {
-      rosterByTier = tSnap.data()?.rosterByTier || {}; // Map of PlayerID -> Tier (A,B,C,D)
+      // *** UPDATE HERE: Accessing 'rosterByTier' ***
+      playerTiers = tSnap.data()?.rosterByTier || {}; 
     }
   }
 
@@ -334,8 +335,8 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
     }
 
     // 2. Snapshot the Tiers
-    const myTier = rosterByTier[p.playerId] || "Unknown";
-    const oppTier = opponent?.playerId ? (rosterByTier[opponent.playerId] || "Unknown") : "N/A";
+    const myTier = playerTiers[p.playerId] || "Unknown";
+    const oppTier = opponent?.playerId ? (playerTiers[opponent.playerId] || "Unknown") : "N/A";
 
     const factRef = db.collection("playerMatchFacts").doc(`${matchId}_${p.playerId}`);
     
