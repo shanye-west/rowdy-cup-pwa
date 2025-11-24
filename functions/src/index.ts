@@ -295,16 +295,14 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
 
   // Match CLOSED -> Write Facts
   const result = after.result || {}; 
+  const status = after.status || {}; // <--- GRAB STATUS
   const points = after.pointsValue ?? 1;
   const tournamentId = after.tournamentId || "";
   const roundId = after.roundId || "";
   
-  // 1. Fetch Context (Format & Tiers & Team IDs)
+  // 1. Fetch Context
   let format = "unknown";
-  const playerTierLookup: Record<string, string> = {};
-  
-  let teamAId = "unknown";
-  let teamBId = "unknown";
+  let rosterByTier: Record<string, string> = {};
 
   if (roundId) {
     const rSnap = await db.collection("rounds").doc(roundId).get();
@@ -315,27 +313,9 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
     const tSnap = await db.collection("tournaments").doc(tournamentId).get();
     if (tSnap.exists) {
       const tData = tSnap.data() || {};
-      
-      // Capture Real Team IDs (e.g., "usa", "europe")
-      teamAId = tData.teamA?.id || "teamA";
-      teamBId = tData.teamB?.id || "teamB";
-
-      // Helper to flatten "Tier -> Array" into "Player -> Tier"
-      // Accepts a map like { "A": ["p1", "p2"], "B": ["p3"] }
-      const flattenRoster = (roster?: Record<string, string[]>) => {
-        if (!roster) return;
-        Object.entries(roster).forEach(([tierName, playerIds]) => {
-          if (Array.isArray(playerIds)) {
-            playerIds.forEach(pid => {
-              playerTierLookup[pid] = tierName;
-            });
-          }
-        });
-      };
-
-      // Process both teams to build the master list
-      flattenRoster(tData.teamA?.rosterByTier);
-      flattenRoster(tData.teamB?.rosterByTier);
+      const tiersA = tData.teamA?.rosterByTier || {};
+      const tiersB = tData.teamB?.rosterByTier || {};
+      rosterByTier = { ...tiersA, ...tiersB }; 
     }
   }
 
@@ -358,13 +338,9 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       pointsEarned = 0;
     }
 
-    // 2. Snapshot the Tiers & Teams
-    const myTier = playerTierLookup[p.playerId] || "Unknown";
-    const oppTier = opponent?.playerId ? (playerTierLookup[opponent.playerId] || "Unknown") : "N/A";
-    
-    // Identify which real-world team they were on
-    const myTeamId = team === "teamA" ? teamAId : teamBId;
-    const oppTeamId = team === "teamA" ? teamBId : teamAId;
+    // 2. Snapshot Tiers
+    const myTier = rosterByTier[p.playerId] || "Unknown";
+    const oppTier = opponent?.playerId ? (rosterByTier[opponent.playerId] || "Unknown") : "N/A";
 
     const factRef = db.collection("playerMatchFacts").doc(`${matchId}_${p.playerId}`);
     
@@ -377,12 +353,13 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       outcome,
       pointsEarned,
       
-      // Context Snapshots
+      // 3. CAPTURE MARGIN STATS
+      finalMargin: status.margin || 0, // e.g. 4
+      finalThru: status.thru || 18,    // e.g. 15
+      
       playerTier: myTier,
-      playerTeamId: myTeamId,
       opponentId: opponent?.playerId || null,
       opponentTier: oppTier,
-      opponentTeamId: oppTeamId,
       
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -391,13 +368,11 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   const teamA = after.teamAPlayers || [];
   const teamB = after.teamBPlayers || [];
 
-  // Write facts for Team A
   teamA.forEach((p: any, idx: number) => {
     const opponent = format === "singles" ? teamB[idx] : null;
     writeFact(p, "teamA", opponent);
   });
 
-  // Write facts for Team B
   teamB.forEach((p: any, idx: number) => {
     const opponent = format === "singles" ? teamA[idx] : null;
     writeFact(p, "teamB", opponent);
