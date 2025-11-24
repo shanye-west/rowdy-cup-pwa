@@ -38,6 +38,12 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
 
   const handleTouchEnd = () => {
     if (pullDistance > THRESHOLD) {
+      // --- NEW: Haptic Feedback ---
+      // This gives a physical "thud" on supported devices so you know it worked
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50); 
+      }
+
       setRefreshing(true);
       // Trigger the refresh
       setTimeout(() => {

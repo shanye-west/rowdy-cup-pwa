@@ -11,7 +11,7 @@ function ScoreBlock({ final, proj, color }: { final: number; proj: number; color
     <span>
       <span style={{ color: color || "inherit" }}>{final}</span>
       {proj > 0 && (
-        <span style={{ fontSize: "0.6em", color: "var(--text-secondary)", marginLeft: 6, verticalAlign: "middle" }}>
+        <span style={{ fontSize: "0.6em", color: "#64748b", marginLeft: 6, verticalAlign: "middle" }}>
           (+{proj})
         </span>
       )}
@@ -24,6 +24,9 @@ export default function App() {
   const [tournament, setTournament] = useState<TournamentDoc | null>(null);
   const [rounds, setRounds] = useState<RoundDoc[]>([]);
   const [matchesByRound, setMatchesByRound] = useState<Record<string, MatchDoc[]>>({});
+  
+  // --- NEW: State to track refresh time ---
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +65,9 @@ export default function App() {
         const bucket: Record<string, MatchDoc[]> = {};
         results.forEach((res) => { bucket[res.roundId] = res.matches; });
         setMatchesByRound(bucket);
+
+        // --- NEW: Set timestamp when data is fully loaded ---
+        setLastUpdated(new Date());
 
       } catch (e) {
         console.error(e);
@@ -109,7 +115,7 @@ export default function App() {
   if (loading) return <div style={{ padding: 16, textAlign: 'center', marginTop: 40 }}>Loading...</div>;
 
   const tName = tournament?.name || "Rowdy Cup";
-  const tSeries = tournament?.series; 
+  const tSeries = tournament?.series; // "rowdyCup" or "christmasClassic"
 
   return (
     <Layout title={tName} series={tSeries}>
@@ -168,7 +174,7 @@ export default function App() {
             </div>
           </section>
 
-          {/* ACTIONS BUTTON (NEW) */}
+          {/* ACTIONS BUTTON */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
             <Link to="/teams" style={{ textDecoration: 'none' }}>
               <button style={{ 
@@ -232,6 +238,19 @@ export default function App() {
               );
             })}
           </section>
+
+          {/* --- NEW: LAST UPDATED FOOTER --- */}
+          {lastUpdated && (
+            <div style={{ 
+              textAlign: 'center', 
+              fontSize: '0.75rem', 
+              color: '#94a3b8', 
+              marginTop: 20, 
+              paddingBottom: 20 
+            }}>
+              Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </div>
+          )}
         </div>
       )}
     </Layout>
