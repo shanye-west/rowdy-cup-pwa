@@ -14,19 +14,10 @@ import { db } from "../firebase";
 import type { TournamentDoc, PlayerDoc, MatchDoc, RoundDoc, RoundFormat } from "../types";
 import { formatMatchStatus } from "../utils";
 
-// Helper component for Handicap Dots
 function Dots({ count }: { count: number }) {
   if (!count || count <= 0) return null;
   return (
-    <span style={{ 
-      color: "#ef4444", 
-      fontSize: "1.2em", 
-      lineHeight: 0, 
-      position: "absolute", 
-      top: 4, 
-      right: 4,
-      pointerEvents: "none" 
-    }}>
+    <span style={{ color: "#ef4444", fontSize: "1.2em", lineHeight: 0, position: "absolute", top: 4, right: 4, pointerEvents: "none" }}>
       {"•".repeat(count)}
     </span>
   );
@@ -40,67 +31,65 @@ export default function Match() {
   const [players, setPlayers] = useState<Record<string, PlayerDoc>>({});
   const [loading, setLoading] = useState(true);
 
+  // 1. Listen to MATCH
   useEffect(() => {
     if (!matchId) return;
     setLoading(true);
 
-    // Listen to the MATCH
-    const unsubMatch = onSnapshot(doc(db, "matches", matchId), async (mSnap) => {
+    const unsub = onSnapshot(doc(db, "matches", matchId), (mSnap) => {
       if (!mSnap.exists()) { setMatch(null); setLoading(false); return; }
-      const m = { id: mSnap.id, ...(mSnap.data() as any) } as MatchDoc;
-      setMatch(m);
+      
+      const mData = { id: mSnap.id, ...(mSnap.data() as any) } as MatchDoc;
+      setMatch(mData);
 
-      // Fetch static data (Tournament/Players) only once if needed
-      // But we need to LISTEN to the Round to get the live "locked" status
-      if (m.roundId) {
-        // We set up a secondary listener for the Round
-        // FIXED: Removed 'const unsubRound =' to silence unused variable error
-        onSnapshot(doc(db, "rounds", m.roundId), async (rSnap) => {
-            if (rSnap.exists()) {
-                const r = { id: rSnap.id, ...(rSnap.data() as any) } as RoundDoc;
-                setRound(r);
-                
-                // Fetch Tournament once (static)
-                const tId = r.tournamentId || m.tournamentId;
-                if (tId && !tournament) { // Check !tournament to avoid infinite loops/refetches
-                    const tSnap = await getDoc(doc(db, "tournaments", tId));
-                    if (tSnap.exists()) {
-                        setTournament({ id: tSnap.id, ...(tSnap.data() as any) } as TournamentDoc);
-                    }
-                }
-            }
-        });
-      }
-
-      // Fetch Players (Static)
+      // Load players logic (Keep this here or move to its own effect)
       const ids = Array.from(new Set([
-        ...(m.teamAPlayers || []).map((p) => p.playerId).filter(Boolean),
-        ...(m.teamBPlayers || []).map((p) => p.playerId).filter(Boolean),
+        ...(mData.teamAPlayers || []).map((p) => p.playerId).filter(Boolean),
+        ...(mData.teamBPlayers || []).map((p) => p.playerId).filter(Boolean),
       ]));
       
       if (ids.length) {
-        // Check if we already have these players to avoid spamming reads
-        const missing = ids.filter(id => !players[id]);
-        if (missing.length > 0) {
-            const qPlayers = query(collection(db, "players"), where("__name__", "in", ids));
-            const pSnap = await getDocs(qPlayers);
-            const map = { ...players };
+        // Optimization: Only fetch if we don't have them yet
+        // (Simplified for brevity, fetching every time is "okay" for MVP but separate effect is better)
+         const qPlayers = query(collection(db, "players"), where("__name__", "in", ids));
+         getDocs(qPlayers).then(pSnap => {
+            const map: Record<string, PlayerDoc> = {};
             pSnap.forEach((d) => { map[d.id] = { id: d.id, ...(d.data() as any) }; });
-            setPlayers(map);
-        }
+            setPlayers(prev => ({ ...prev, ...map }));
+         });
       }
       setLoading(false);
     });
 
-    return () => unsubMatch();
-  }, [matchId]); // Note: We rely on the internal logic to fetch Round/Players
+    return () => unsub();
+  }, [matchId]);
+
+  // 2. Listen to ROUND (Only when roundId changes)
+  useEffect(() => {
+    if (!match?.roundId) return;
+
+    const unsub = onSnapshot(doc(db, "rounds", match.roundId), async (rSnap) => {
+      if (rSnap.exists()) {
+        const rData = { id: rSnap.id, ...(rSnap.data() as any) } as RoundDoc;
+        setRound(rData);
+
+        // Fetch Tournament (One-time fetch is fine)
+        if (rData.tournamentId) {
+            const tSnap = await getDoc(doc(db, "tournaments", rData.tournamentId));
+            if (tSnap.exists()) {
+                setTournament({ id: tSnap.id, ...(tSnap.data() as any) } as TournamentDoc);
+            }
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [match?.roundId]);
 
   const format: RoundFormat = (round?.format as RoundFormat) || "twoManBestBall";
   
   // --- LOCK LOGIC ---
-  // 1. Round Lock (Master Override)
   const roundLocked = !!round?.locked;
-  // 2. Match Closed (Soft Lock)
   const isMatchClosed = !!match?.status?.closed;
   const matchThru = match?.status?.thru ?? 0;
 
@@ -119,8 +108,7 @@ export default function Match() {
   }
 
   async function saveHole(k: string, nextInput: any) {
-    if (!match?.id || roundLocked) return; // Hard block if round is locked
-    
+    if (!match?.id || roundLocked) return;
     try {
       await updateDoc(doc(db, "matches", match.id), { [`holes.${k}.input`]: nextInput });
     } catch (e) {
@@ -132,8 +120,6 @@ export default function Match() {
   function HoleRow({ k, input }: { k: string; input: any }) {
     const holeIdx = Number(k) - 1;
     const holeNum = Number(k);
-
-    // Lock if: Round is Locked OR (Match is Closed AND hole is past the finish)
     const isHoleLocked = roundLocked || (isMatchClosed && holeNum > matchThru);
 
     const getStrokes = (team: "A" | "B", pIdx: number) => {
@@ -142,12 +128,8 @@ export default function Match() {
     };
 
     const inputStyle = {
-      width: "100%", 
-      padding: "10px 4px", 
-      textAlign: "center" as const, 
-      fontSize: "1.1em",
-      borderRadius: 4,
-      border: "1px solid #ccc",
+      width: "100%", padding: "10px 4px", textAlign: "center" as const, 
+      fontSize: "1.1em", borderRadius: 4, border: "1px solid #ccc",
       backgroundColor: isHoleLocked ? "#f3f4f6" : "white",
       color: isHoleLocked ? "#9ca3af" : "inherit"
     };
@@ -155,19 +137,16 @@ export default function Match() {
     if (format === "twoManScramble") {
       const a = input?.teamAGross ?? null;
       const b = input?.teamBGross ?? null;
-      
       return (
         <div key={k} style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", gap: 12, alignItems: "center", marginBottom: 8 }}>
           <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>{k}</div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={a ?? ""} disabled={isHoleLocked} style={inputStyle}
-              onChange={(e) => saveHole(k, { teamAGross: e.target.value === "" ? null : Number(e.target.value), teamBGross: b })}
-            />
+              onChange={(e) => saveHole(k, { teamAGross: e.target.value === "" ? null : Number(e.target.value), teamBGross: b })} />
           </div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={b ?? ""} disabled={isHoleLocked} style={inputStyle}
-              onChange={(e) => saveHole(k, { teamAGross: a, teamBGross: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+              onChange={(e) => saveHole(k, { teamAGross: a, teamBGross: e.target.value === "" ? null : Number(e.target.value) })} />
           </div>
         </div>
       );
@@ -176,23 +155,18 @@ export default function Match() {
     if (format === "singles") {
       const a = input?.teamAPlayerGross ?? null;
       const b = input?.teamBPlayerGross ?? null;
-      const sA = getStrokes("A", 0);
-      const sB = getStrokes("B", 0);
-
       return (
         <div key={k} style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", gap: 12, alignItems: "center", marginBottom: 8 }}>
           <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>{k}</div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={a ?? ""} disabled={isHoleLocked} style={inputStyle}
-              onChange={(e) => saveHole(k, { teamAPlayerGross: e.target.value === "" ? null : Number(e.target.value), teamBPlayerGross: b })}
-            />
-            <Dots count={sA} />
+              onChange={(e) => saveHole(k, { teamAPlayerGross: e.target.value === "" ? null : Number(e.target.value), teamBPlayerGross: b })} />
+            <Dots count={getStrokes("A", 0)} />
           </div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={b ?? ""} disabled={isHoleLocked} style={inputStyle}
-              onChange={(e) => saveHole(k, { teamAPlayerGross: a, teamBPlayerGross: e.target.value === "" ? null : Number(e.target.value) })}
-            />
-            <Dots count={sB} />
+              onChange={(e) => saveHole(k, { teamAPlayerGross: a, teamBPlayerGross: e.target.value === "" ? null : Number(e.target.value) })} />
+            <Dots count={getStrokes("B", 0)} />
           </div>
         </div>
       );
@@ -207,26 +181,22 @@ export default function Match() {
         <div style={{ textAlign: "center", fontWeight: "bold", color: "#888", fontSize: "0.9em" }}>{k}</div>
         <div style={{ position: "relative" }}>
           <input type="number" inputMode="numeric" value={aArr[0] ?? ""} disabled={isHoleLocked} style={inputStyle}
-            onChange={(e) => { const n = [...aArr]; n[0] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: n, teamBPlayersGross: bArr }); }} 
-          />
+            onChange={(e) => { const n = [...aArr]; n[0] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: n, teamBPlayersGross: bArr }); }} />
           <Dots count={getStrokes("A", 0)} />
         </div>
         <div style={{ position: "relative" }}>
           <input type="number" inputMode="numeric" value={aArr[1] ?? ""} disabled={isHoleLocked} style={inputStyle}
-            onChange={(e) => { const n = [...aArr]; n[1] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: n, teamBPlayersGross: bArr }); }} 
-          />
+            onChange={(e) => { const n = [...aArr]; n[1] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: n, teamBPlayersGross: bArr }); }} />
           <Dots count={getStrokes("A", 1)} />
         </div>
         <div style={{ position: "relative" }}>
           <input type="number" inputMode="numeric" value={bArr[0] ?? ""} disabled={isHoleLocked} style={inputStyle}
-            onChange={(e) => { const n = [...bArr]; n[0] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: aArr, teamBPlayersGross: n }); }} 
-          />
+            onChange={(e) => { const n = [...bArr]; n[0] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: aArr, teamBPlayersGross: n }); }} />
           <Dots count={getStrokes("B", 0)} />
         </div>
         <div style={{ position: "relative" }}>
           <input type="number" inputMode="numeric" value={bArr[1] ?? ""} disabled={isHoleLocked} style={inputStyle}
-            onChange={(e) => { const n = [...bArr]; n[1] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: aArr, teamBPlayersGross: n }); }} 
-          />
+            onChange={(e) => { const n = [...bArr]; n[1] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: aArr, teamBPlayersGross: n }); }} />
           <Dots count={getStrokes("B", 1)} />
         </div>
       </div>
@@ -246,8 +216,6 @@ export default function Match() {
             )}
             <h2 style={{ margin: 0 }}>Match {match.id}</h2>
           </div>
-          
-          {/* Visual indicator ONLY (no button) */}
           {roundLocked && (
             <div style={{background:'#fee2e2', color:'#b91c1c', fontSize:'0.8rem', padding:'4px 8px', borderRadius:4, fontWeight:'bold'}}>
               LOCKED
@@ -259,20 +227,17 @@ export default function Match() {
         </div>
       </div>
 
-      {/* Status Card */}
       <div style={{ background: (isMatchClosed || roundLocked) ? "#fff1f2" : "#f8fafc", border: "1px solid #e2e8f0", padding: 16, borderRadius: 8, textAlign: "center" }}>
         <div style={{ fontSize: "1.2em", fontWeight: "bold", marginBottom: 4 }}>
           {formatMatchStatus(match.status, tournament?.teamA?.name, tournament?.teamB?.name)}
         </div>
         <div style={{ fontSize: "0.9em", opacity: 0.7 }}>
-          {/* FIXED: Added optional chaining below to fix TS error */}
           {match.status?.closed 
             ? "Final Result" 
             : (match.status?.thru ?? 0) > 0 ? `Thru ${match.status?.thru}` : "Not started"}
         </div>
       </div>
 
-      {/* Player Names & Score Grid... (Rest of file is unchanged) */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: "0.9em" }}>
         <div style={{ borderTop: `3px solid ${tournament?.teamA?.color || "#ccc"}`, paddingTop: 4 }}>
           <div style={{ fontWeight: 700 }}>{tournament?.teamA?.name || "Team A"}</div>
