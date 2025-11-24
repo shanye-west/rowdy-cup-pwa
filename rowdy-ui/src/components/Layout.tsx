@@ -1,27 +1,27 @@
-import { useEffect } from "react";
+// src/components/Layout.tsx
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 type LayoutProps = {
   title: string;
-  tournamentName?: string; // Used to detect theme
+  series?: string; // "rowdyCup" | "christmasClassic"
   showBack?: boolean;
   children: React.ReactNode;
 };
 
-export default function Layout({ title, tournamentName, showBack, children }: LayoutProps) {
+export default function Layout({ title, series, showBack, children }: LayoutProps) {
   const navigate = useNavigate();
 
   // --- THEME ENGINE ---
   useEffect(() => {
-    // Check if "Christmas" is in the tournament name
-    const isChristmas = tournamentName?.toLowerCase().includes("christmas");
-    
-    if (isChristmas) {
+    // If the series is Christmas Classic, add the class. 
+    // Otherwise remove it (defaulting to Summer/Rowdy Cup colors).
+    if (series === "christmasClassic") {
       document.body.classList.add("theme-christmas");
     } else {
       document.body.classList.remove("theme-christmas");
     }
-  }, [tournamentName]);
+  }, [series]);
 
   return (
     <>
@@ -30,7 +30,7 @@ export default function Layout({ title, tournamentName, showBack, children }: La
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
           {showBack && (
             <button onClick={() => navigate(-1)} className="btn-back" aria-label="Go Back">
-              {/* Simple Chevron Left Icon */}
+              {/* Chevron Left Icon */}
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
@@ -39,11 +39,11 @@ export default function Layout({ title, tournamentName, showBack, children }: La
           <div className="header-title">{title}</div>
         </div>
         
-        {/* Placeholder for right-side menu (optional) */}
+        {/* Placeholder for future menu icon */}
         <div style={{ width: 24 }}></div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <main className="app-container">
         {children}
       </main>
