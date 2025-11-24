@@ -5,6 +5,7 @@ import { db } from "../firebase";
 import type { RoundDoc, TournamentDoc, MatchDoc, PlayerDoc } from "../types";
 import { formatMatchStatus } from "../utils";
 import Layout from "../components/Layout";
+import LastUpdated from "../components/LastUpdated";
 
 // Helper for the Round Scoreboard
 function ScoreBlock({ final, proj, color }: { final: number; proj: number; color?: string }) {
@@ -223,6 +224,7 @@ export default function Round() {
             })
           )}
         </section>
+        <LastUpdated />
       </div>
     </Layout>
   );

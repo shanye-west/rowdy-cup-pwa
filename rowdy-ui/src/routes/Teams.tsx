@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, query, where, documentId } from "firebase/firestore";
 import { db } from "../firebase";
 import Layout from "../components/Layout";
+import LastUpdated from "../components/LastUpdated";
 import type { TournamentDoc, PlayerDoc, PlayerMatchFact, TierMap } from "../types";
 
 // We define a local type for the aggregated tournament stats
@@ -159,6 +160,7 @@ export default function Teams() {
           tournament?.teamB?.color || "var(--team-b-default)", 
           tournament?.teamB?.rosterByTier
         )}
+        <LastUpdated />
       </div>
     </Layout>
   );

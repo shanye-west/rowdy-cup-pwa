@@ -5,6 +5,7 @@ import { db } from "../firebase";
 import type { TournamentDoc, PlayerDoc, MatchDoc, RoundDoc, RoundFormat } from "../types";
 import { formatMatchStatus } from "../utils";
 import Layout from "../components/Layout";
+import LastUpdated from "../components/LastUpdated";
 
 // Small red dots for strokes
 function Dots({ count }: { count: number }) {
@@ -294,7 +295,7 @@ export default function Match() {
             ))}
         </div>
 
-        <div style={{ height: 40 }}></div>
+        <LastUpdated />
       </div>
     </Layout>
   );

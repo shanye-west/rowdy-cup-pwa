@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import type { TournamentDoc, RoundDoc, MatchDoc } from "./types";
-import Layout from "./components/Layout"; 
+import Layout from "./components/Layout";
+import LastUpdated from "./components/LastUpdated"; 
 
 // Small helper for score display
 function ScoreBlock({ final, proj, color }: { final: number; proj: number; color?: string }) {
@@ -24,9 +25,6 @@ export default function App() {
   const [tournament, setTournament] = useState<TournamentDoc | null>(null);
   const [rounds, setRounds] = useState<RoundDoc[]>([]);
   const [matchesByRound, setMatchesByRound] = useState<Record<string, MatchDoc[]>>({});
-  
-  // --- NEW: State to track refresh time ---
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -65,9 +63,6 @@ export default function App() {
         const bucket: Record<string, MatchDoc[]> = {};
         results.forEach((res) => { bucket[res.roundId] = res.matches; });
         setMatchesByRound(bucket);
-
-        // --- NEW: Set timestamp when data is fully loaded ---
-        setLastUpdated(new Date());
 
       } catch (e) {
         console.error(e);
@@ -239,18 +234,7 @@ export default function App() {
             })}
           </section>
 
-          {/* --- NEW: LAST UPDATED FOOTER --- */}
-          {lastUpdated && (
-            <div style={{ 
-              textAlign: 'center', 
-              fontSize: '0.75rem', 
-              color: '#94a3b8', 
-              marginTop: 20, 
-              paddingBottom: 20 
-            }}>
-              Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </div>
-          )}
+          <LastUpdated />
         </div>
       )}
     </Layout>
