@@ -344,7 +344,6 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   
   // 1. Fetch Context (Format & Tiers)
   let format = "unknown";
-  // *** UPDATED: RENAMED VARIABLE ***
   let rosterByTier: Record<string, string> = {};
 
   if (roundId) {
@@ -355,8 +354,14 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   if (tournamentId) {
     const tSnap = await db.collection("tournaments").doc(tournamentId).get();
     if (tSnap.exists) {
-      // *** UPDATED: FETCHING CORRECT FIELD INTO CORRECT VARIABLE ***
-      rosterByTier = tSnap.data()?.rosterByTier || {}; 
+      const tData = tSnap.data() || {};
+      
+      // *** FIX: Fetch from BOTH teams and merge them ***
+      const tiersA = tData.teamA?.rosterByTier || {};
+      const tiersB = tData.teamB?.rosterByTier || {};
+      
+      // Combine them into one master lookup object
+      rosterByTier = { ...tiersA, ...tiersB }; 
     }
   }
 
@@ -380,7 +385,6 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
     }
 
     // 2. Snapshot the Tiers
-    // *** UPDATED: USING CORRECT VARIABLE ***
     const myTier = rosterByTier[p.playerId] || "Unknown";
     const oppTier = opponent?.playerId ? (rosterByTier[opponent.playerId] || "Unknown") : "N/A";
 

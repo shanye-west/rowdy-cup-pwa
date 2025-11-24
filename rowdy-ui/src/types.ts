@@ -9,10 +9,20 @@ export type PlayerDoc = {
 export type TournamentDoc = {
   id: string;
   name: string;
-  teamA: { id: string; name: string; color?: string };
-  teamB: { id: string; name: string; color?: string };
-  // NEW: Map of PlayerID -> Tier for THIS tournament
-  rosterByTier?: Record<string, "A" | "B" | "C" | "D">; 
+  teamA: { 
+    id: string; 
+    name: string; 
+    color?: string;
+    // Nested here
+    rosterByTier?: Record<string, "A" | "B" | "C" | "D">; 
+  };
+  teamB: { 
+    id: string; 
+    name: string; 
+    color?: string;
+    // And here
+    rosterByTier?: Record<string, "A" | "B" | "C" | "D">; 
+  };
 };
 
 export type RoundDoc = {
