@@ -109,7 +109,7 @@ export default function App() {
   if (loading) return <div style={{ padding: 16, textAlign: 'center', marginTop: 40 }}>Loading...</div>;
 
   const tName = tournament?.name || "Rowdy Cup";
-  const tSeries = tournament?.series; // "rowdyCup" or "christmasClassic"
+  const tSeries = tournament?.series; 
 
   return (
     <Layout title={tName} series={tSeries}>
@@ -167,6 +167,28 @@ export default function App() {
               </div>
             </div>
           </section>
+
+          {/* ACTIONS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+            <Link to="/teams" style={{ textDecoration: 'none' }}>
+              <button style={{ 
+                width: '100%', 
+                padding: '14px', 
+                background: 'white', 
+                color: 'var(--brand-primary)',
+                border: '1px solid var(--divider)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+              }}>
+                View Team Rosters
+              </button>
+            </Link>
+          </div>
 
           {/* ROUNDS LIST */}
           <section style={{ display: "grid", gap: 12 }}>

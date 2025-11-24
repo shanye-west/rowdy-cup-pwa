@@ -1,0 +1,139 @@
+import { useEffect, useState } from "react";
+import { collection, getDocs, query, where, documentId } from "firebase/firestore";
+import { db } from "../firebase";
+import Layout from "../components/Layout";
+import type { TournamentDoc, PlayerDoc, PlayerStatDoc, TierMap } from "../types";
+
+export default function Teams() {
+  const [loading, setLoading] = useState(true);
+  const [tournament, setTournament] = useState<TournamentDoc | null>(null);
+  const [players, setPlayers] = useState<Record<string, PlayerDoc>>({});
+  const [stats, setStats] = useState<Record<string, PlayerStatDoc>>({});
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch Active Tournament
+        const tSnap = await getDocs(query(collection(db, "tournaments"), where("active", "==", true)));
+        if (tSnap.empty) { setLoading(false); return; }
+        const tData = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as TournamentDoc;
+        setTournament(tData);
+
+        // 2. Collect all Player IDs from Rosters
+        const teamAIds = Object.values(tData.teamA.rosterByTier || {}).flat();
+        const teamBIds = Object.values(tData.teamB.rosterByTier || {}).flat();
+        const allIds = [...teamAIds, ...teamBIds];
+
+        if (allIds.length === 0) { setLoading(false); return; }
+
+        // 3. Fetch Players (chunked to avoid Firestore limit of 10)
+        const pMap: Record<string, PlayerDoc> = {};
+        const chunks = [];
+        for (let i=0; i<allIds.length; i+=10) chunks.push(allIds.slice(i, i+10));
+        
+        for (const chunk of chunks) {
+          const pSnap = await getDocs(query(collection(db, "players"), where(documentId(), "in", chunk)));
+          pSnap.forEach(doc => { pMap[doc.id] = { id: doc.id, ...doc.data() } as PlayerDoc; });
+        }
+        setPlayers(pMap);
+
+        // 4. Fetch Stats
+        const sSnap = await getDocs(collection(db, "playerStats"));
+        const sMap: Record<string, PlayerStatDoc> = {};
+        sSnap.forEach(doc => { sMap[doc.id] = { id: doc.id, ...doc.data() } as PlayerStatDoc; });
+        setStats(sMap);
+
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const renderRoster = (teamName: string, teamColor: string, roster?: TierMap) => {
+    if (!roster) return <div className="card" style={{ padding: 16, opacity: 0.6 }}>No roster defined.</div>;
+
+    // Sort tiers alphabetically (A, B, C...)
+    const tiers = Object.keys(roster).sort();
+
+    return (
+      <div className="card" style={{ padding: 0, overflow: "hidden", borderTop: `4px solid ${teamColor}` }}>
+        {/* Team Header */}
+        <div style={{ background: "#f8fafc", padding: "12px 16px", borderBottom: "1px solid var(--divider)" }}>
+          <h2 style={{ fontSize: "1rem", color: teamColor, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            {teamName}
+          </h2>
+        </div>
+        
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {tiers.map((tier) => {
+            const pIds = roster[tier as keyof TierMap] || [];
+            if (pIds.length === 0) return null;
+
+            return (
+              <div key={tier}>
+                {/* Tier Label */}
+                <div style={{ 
+                  background: "#f1f5f9", 
+                  padding: "6px 16px", 
+                  fontSize: "0.7rem", 
+                  fontWeight: 700, 
+                  color: "var(--text-secondary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  borderBottom: "1px solid var(--divider)"
+                }}>
+                  Tier {tier}
+                </div>
+
+                {/* Player Rows */}
+                {pIds.map(pid => {
+                  const p = players[pid];
+                  const s = stats[pid];
+                  const name = p?.displayName || p?.username || "Unknown";
+                  
+                  return (
+                    <div key={pid} style={{ 
+                      display: "flex", 
+                      justifyContent: "space-between", 
+                      alignItems: "center",
+                      padding: "12px 16px",
+                      borderBottom: "1px solid var(--divider)"
+                    }}>
+                      <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{name}</div>
+                      <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                        {s ? `${s.wins}-${s.losses}-${s.halves}` : "0-0-0"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) return <div style={{ padding: 20, textAlign: "center" }}>Loading...</div>;
+
+  return (
+    <Layout title="Team Rosters" series={tournament?.series} showBack>
+      <div style={{ padding: 16, display: "grid", gap: 24, maxWidth: 800, margin: "0 auto" }}>
+        {/* Team A Card */}
+        {renderRoster(
+          tournament?.teamA?.name || "Team A", 
+          tournament?.teamA?.color || "var(--team-a-default)", 
+          tournament?.teamA?.rosterByTier
+        )}
+
+        {/* Team B Card */}
+        {renderRoster(
+          tournament?.teamB?.name || "Team B", 
+          tournament?.teamB?.color || "var(--team-b-default)", 
+          tournament?.teamB?.rosterByTier
+        )}
+      </div>
+    </Layout>
+  );
+}
