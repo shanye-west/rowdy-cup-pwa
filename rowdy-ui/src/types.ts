@@ -11,6 +11,8 @@ export type TournamentDoc = {
   name: string;
   teamA: { id: string; name: string; color?: string };
   teamB: { id: string; name: string; color?: string };
+  // NEW: Map of PlayerID -> Tier for THIS tournament
+  playerTiers?: Record<string, "A" | "B" | "C" | "D">; 
 };
 
 export type RoundDoc = {
