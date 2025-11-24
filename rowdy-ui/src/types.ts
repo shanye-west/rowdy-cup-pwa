@@ -36,6 +36,8 @@ export type RoundDoc = {
   tournamentId: string;
   day?: number;
   format: RoundFormat;
+  // NEW: Master Switch
+  locked?: boolean; 
 };
 
 export type MatchDoc = {
