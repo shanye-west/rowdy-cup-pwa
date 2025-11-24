@@ -94,12 +94,23 @@ export default function Match() {
   const matchThru = match?.status?.thru ?? 0;
 
   const holes = useMemo(() => {
-    const h = match?.holes || {};
-    return Array.from({ length: 18 }, (_, i) => String(i + 1)).map((k) => ({
-      k,
-      input: h[k]?.input || {},
-    }));
-  }, [match]);
+    const hMatch = match?.holes || {};
+    const hCourse = round?.course?.holes || [];
+
+    return Array.from({ length: 18 }, (_, i) => {
+      const num = i + 1;
+      const k = String(num);
+      // Find static info (par/hcp) if it exists
+      const info = hCourse.find(h => h.number === num);
+      
+      return {
+        k,
+        input: hMatch[k]?.input || {},
+        par: info?.par,  // <--- Pass to HoleRow
+        hcp: info?.hcp,  // <--- Pass to HoleRow
+      };
+    });
+  }, [match, round]);
 
   function nameFor(id?: string) {
     if (!id) return "";
@@ -117,7 +128,7 @@ export default function Match() {
     }
   }
 
-  function HoleRow({ k, input }: { k: string; input: any }) {
+  function HoleRow({ k, input, par, hcp }: { k: string; input: any; par?: number; hcp?: number }) {
     const holeIdx = Number(k) - 1;
     const holeNum = Number(k);
     const isHoleLocked = roundLocked || (isMatchClosed && holeNum > matchThru);
@@ -139,7 +150,10 @@ export default function Match() {
       const b = input?.teamBGross ?? null;
       return (
         <div key={k} style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", gap: 12, alignItems: "center", marginBottom: 8 }}>
-          <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>{k}</div>
+          <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>
+            <div>{k}</div>
+            <div style={{ fontSize: "0.65em", opacity: 0.6 }}>{par ? `Par ${par}` : ""}{hcp ? ` • HCP ${hcp}` : ""}</div>
+          </div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={a ?? ""} disabled={isHoleLocked} style={inputStyle}
               onChange={(e) => saveHole(k, { teamAGross: e.target.value === "" ? null : Number(e.target.value), teamBGross: b })} />
@@ -157,7 +171,10 @@ export default function Match() {
       const b = input?.teamBPlayerGross ?? null;
       return (
         <div key={k} style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", gap: 12, alignItems: "center", marginBottom: 8 }}>
-          <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>{k}</div>
+          <div style={{ textAlign: "center", fontWeight: "bold", color: "#888" }}>
+            <div>{k}</div>
+            <div style={{ fontSize: "0.65em", opacity: 0.6 }}>{par ? `Par ${par}` : ""}{hcp ? ` • HCP ${hcp}` : ""}</div>
+          </div>
           <div style={{ position: "relative" }}>
             <input type="number" inputMode="numeric" value={a ?? ""} disabled={isHoleLocked} style={inputStyle}
               onChange={(e) => saveHole(k, { teamAPlayerGross: e.target.value === "" ? null : Number(e.target.value), teamBPlayerGross: b })} />
@@ -176,9 +193,12 @@ export default function Match() {
     const aArr = Array.isArray(input?.teamAPlayersGross) ? input.teamAPlayersGross : [null, null];
     const bArr = Array.isArray(input?.teamBPlayersGross) ? input.teamBPlayersGross : [null, null];
 
-    return (
+      return (
       <div key={k} style={{ display: "grid", gridTemplateColumns: "30px repeat(4, 1fr)", gap: 6, alignItems: "center", marginBottom: 8 }}>
-        <div style={{ textAlign: "center", fontWeight: "bold", color: "#888", fontSize: "0.9em" }}>{k}</div>
+        <div style={{ textAlign: "center", fontWeight: "bold", color: "#888", fontSize: "0.9em" }}>
+          <div>{k}</div>
+          <div style={{ fontSize: "0.65em", opacity: 0.6 }}>{par ? `Par ${par}` : ""}{hcp ? ` • HCP ${hcp}` : ""}</div>
+        </div>
         <div style={{ position: "relative" }}>
           <input type="number" inputMode="numeric" value={aArr[0] ?? ""} disabled={isHoleLocked} style={inputStyle}
             onChange={(e) => { const n = [...aArr]; n[0] = e.target.value === "" ? null : Number(e.target.value); saveHole(k, { teamAPlayersGross: n, teamBPlayersGross: bArr }); }} />
@@ -261,7 +281,7 @@ export default function Match() {
         )}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {holes.map((h) => (
-            <HoleRow key={h.k} k={h.k} input={h.input} />
+            <HoleRow key={h.k} k={h.k} input={h.input} par={h.par} hcp={h.hcp} />
           ))}
         </div>
       </div>

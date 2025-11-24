@@ -31,13 +31,27 @@ export type TournamentDoc = {
   };
 };
 
+// NEW: Hole definition (static data)
+export type HoleInfo = {
+  number: number;
+  par: number;
+  hcp: number; // Handicap Index (1-18)
+};
+
+// UPDATED: RoundDoc now includes full course data
 export type RoundDoc = {
   id: string;
   tournamentId: string;
   day?: number;
   format: RoundFormat;
-  // NEW: Master Switch
-  locked?: boolean; 
+  locked?: boolean;
+  
+  // NEW: Course details
+  course?: {
+    name: string;
+    tee?: string; // e.g., "Blue", "White"
+    holes: HoleInfo[]; // Array of 18 objects
+  };
 };
 
 export type MatchDoc = {
