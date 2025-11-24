@@ -35,7 +35,7 @@ export type TournamentDoc = {
 export type HoleInfo = {
   number: number;
   par: number;
-  hcp: number; // Handicap Index (1-18)
+  hcpIndex: number; // Handicap Index (1-18)
 };
 
 // UPDATED: RoundDoc now includes full course data
@@ -58,7 +58,7 @@ export type MatchDoc = {
   id: string;
   roundId: string;
   tournamentId?: string;
-  pointsValue?: number;
+  pointsValue: number;
   holes?: Record<string, { input: any }>;
   result?: { 
     winner?: "teamA" | "teamB" | "AS";

@@ -121,7 +121,16 @@ export const seedRoundDefaults = onDocumentCreated("rounds/{roundId}", async (ev
   const ref = event.data?.ref;
   const data = event.data?.data();
   if (!ref || !data) return;
-  if (!Array.isArray(data.matchIds)) await ref.set({ matchIds: [] }, { merge: true });
+
+  const toMerge: any = {};
+  if (!Array.isArray(data.matchIds)) toMerge.matchIds = [];
+  if (data.day === undefined) toMerge.day = 0;
+  if (data.format === undefined) toMerge.format = null;
+  if (data.locked === undefined) toMerge.locked = false;
+  if (Object.keys(toMerge).length > 0) {
+    toMerge._seededAt = FieldValue.serverTimestamp();
+    await ref.set(toMerge, { merge: true });
+  }
 });
 
 export const linkRoundToTournament = onDocumentWritten("rounds/{roundId}", async (event) => {
