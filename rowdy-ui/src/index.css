@@ -96,6 +96,11 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
+  /* Christmas Classic: diagonal split header (green bottom-left, red top-right) */
+  body.theme-christmas .app-header {
+    background: linear-gradient(135deg, #00863c 50%, #ef211c 50%);
+  }
+
   .header-title {
     @apply text-lg font-bold uppercase tracking-wide truncate;
     max-width: 70%;
