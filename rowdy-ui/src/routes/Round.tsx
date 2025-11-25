@@ -6,20 +6,7 @@ import type { RoundDoc, TournamentDoc, MatchDoc, PlayerDoc } from "../types";
 import { formatMatchStatus } from "../utils";
 import Layout from "../components/Layout";
 import LastUpdated from "../components/LastUpdated";
-
-// Helper for the Round Scoreboard
-function ScoreBlock({ final, proj, color }: { final: number; proj: number; color?: string }) {
-  return (
-    <span>
-      <span style={{ color: color || "inherit" }}>{final}</span>
-      {proj > 0 && (
-        <span style={{ fontSize: "0.6em", color: "var(--text-secondary)", marginLeft: 6, verticalAlign: "middle" }}>
-          (+{proj})
-        </span>
-      )}
-    </span>
-  );
-}
+import ScoreBlock from "../components/ScoreBlock";
 
 export default function Round() {
   const { roundId } = useParams();

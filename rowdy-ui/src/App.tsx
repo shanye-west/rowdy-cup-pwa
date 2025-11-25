@@ -4,21 +4,8 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 import type { TournamentDoc, RoundDoc, MatchDoc } from "./types";
 import Layout from "./components/Layout";
-import LastUpdated from "./components/LastUpdated"; 
-
-// Small helper for score display
-function ScoreBlock({ final, proj, color }: { final: number; proj: number; color?: string }) {
-  return (
-    <span>
-      <span style={{ color: color || "inherit" }}>{final}</span>
-      {proj > 0 && (
-        <span style={{ fontSize: "0.6em", color: "#64748b", marginLeft: 6, verticalAlign: "middle" }}>
-          (+{proj})
-        </span>
-      )}
-    </span>
-  );
-}
+import LastUpdated from "./components/LastUpdated";
+import ScoreBlock from "./components/ScoreBlock";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -152,7 +139,12 @@ export default function App() {
                   {tournament.teamA?.name || "Team A"}
                 </div>
                 <div style={{ fontSize: "2.5rem", fontWeight: 800, lineHeight: 1 }}>
-                  <ScoreBlock final={stats.fA} proj={stats.pA} color={tournament.teamA?.color || "var(--team-a-default)"} />
+                  <ScoreBlock
+                    final={stats.fA}
+                    proj={stats.pA}
+                    color={tournament.teamA?.color || "var(--team-a-default)"}
+                    projectionColor="#64748b"
+                  />
                 </div>
               </div>
 
@@ -177,7 +169,12 @@ export default function App() {
                   {tournament.teamB?.name || "Team B"}
                 </div>
                 <div style={{ fontSize: "2.5rem", fontWeight: 800, lineHeight: 1 }}>
-                  <ScoreBlock final={stats.fB} proj={stats.pB} color={tournament.teamB?.color || "var(--team-b-default)"} />
+                  <ScoreBlock
+                    final={stats.fB}
+                    proj={stats.pB}
+                    color={tournament.teamB?.color || "var(--team-b-default)"}
+                    projectionColor="#64748b"
+                  />
                 </div>
               </div>
             </div>
@@ -239,9 +236,19 @@ export default function App() {
                     <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{r.format}</div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: "1.2rem", fontWeight: "bold" }}>
-                    <ScoreBlock final={rs.fA} proj={rs.pA} color={tournament.teamA?.color} />
+                    <ScoreBlock
+                      final={rs.fA}
+                      proj={rs.pA}
+                      color={tournament.teamA?.color}
+                      projectionColor="#64748b"
+                    />
                     <span style={{ margin: "0 8px", opacity: 0.3, fontWeight: 400 }}>-</span>
-                    <ScoreBlock final={rs.fB} proj={rs.pB} color={tournament.teamB?.color} />
+                    <ScoreBlock
+                      final={rs.fB}
+                      proj={rs.pB}
+                      color={tournament.teamB?.color}
+                      projectionColor="#64748b"
+                    />
                   </div>
                 </Link>
               );
