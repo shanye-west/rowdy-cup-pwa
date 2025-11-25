@@ -232,7 +232,7 @@ export default function App() {
                   key={r.id} 
                   to={`/round/${r.id}`} 
                   className="card card-hover"
-                  style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: 12 }}
+                  style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 12 }}
                 >
                   {/* Team A - Left */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
