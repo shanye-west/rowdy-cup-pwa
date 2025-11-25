@@ -12,13 +12,7 @@ export default function LastUpdated() {
   }, []);
 
   return (
-    <div style={{ 
-      textAlign: 'center', 
-      fontSize: '0.75rem', 
-      color: '#94a3b8', 
-      marginTop: 20, 
-      paddingBottom: 20 
-    }}>
+    <div className="text-center text-xs text-slate-400 mt-5 pb-5">
       Last updated: {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
     </div>
   );

@@ -11,12 +11,9 @@ import LastUpdated from "../components/LastUpdated";
 function Dots({ count }: { count: number }) {
   if (!count || count <= 0) return null;
   return (
-    <div style={{ 
-      display: 'flex', gap: 1, justifyContent: 'center', 
-      position: "absolute", top: 2, right: 2, pointerEvents: "none" 
-    }}>
+    <div className="flex gap-px justify-center absolute top-0.5 right-0.5 pointer-events-none">
       {Array.from({length: count}).map((_, i) => (
-        <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#ef4444' }}></div>
+        <div key={i} className="w-1 h-1 rounded-full bg-red-500"></div>
       ))}
     </div>
   );
@@ -217,10 +214,10 @@ export default function Match() {
         <div className="card" style={{ display: "grid", gridTemplateColumns: "40px repeat(4, 1fr)", gap: 8, alignItems: "center", padding: "12px 8px" }}>
             <div style={{ textAlign: "center", borderRight: "1px solid var(--divider)", paddingRight: 8 }}>
                 <div style={{ fontSize: "1.2rem", fontWeight: 800 }}>{k}</div>
-                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                <div className="text-xs text-slate-500">
                     {par ? `Par ${par}` : ""}
                 </div>
-                {hcpIndex && <div style={{ fontSize: "0.6rem", color: "#94a3b8" }}>{hcpIndex}</div>}
+                {hcpIndex && <div className="text-xs text-slate-400">{hcpIndex}</div>}
             </div>
             
             {renderInputs()}
@@ -228,8 +225,17 @@ export default function Match() {
     );
   }
 
-  if (loading) return <div style={{ padding: 20, textAlign: "center" }}>Loading Match...</div>;
-  if (!match) return <div style={{ padding: 20 }}>Match not found.</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="spinner-lg"></div>
+    </div>
+  );
+  if (!match) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">🔍</div>
+      <div className="empty-state-text">Match not found.</div>
+    </div>
+  );
 
   const tName = tournament?.name || "Match Scoring";
   const tSeries = tournament?.series;

@@ -82,7 +82,11 @@ export default function Teams() {
   }, []);
 
   const renderRoster = (teamName: string, teamColor: string, roster?: TierMap, handicaps?: Record<string, number>, logo?: string) => {
-    if (!roster) return <div className="card" style={{ padding: 16, opacity: 0.6 }}>No roster defined.</div>;
+    if (!roster) return (
+      <div className="card p-4 opacity-60">
+        <div className="text-center text-slate-400">No roster defined.</div>
+      </div>
+    );
 
     // Sort tiers alphabetically (A, B, C...)
     const tiers = Object.keys(roster).sort();
@@ -90,7 +94,7 @@ export default function Teams() {
     return (
       <div className="card" style={{ padding: 0, overflow: "hidden", borderTop: `4px solid ${teamColor}` }}>
         {/* Team Header */}
-        <div style={{ background: "#f8fafc", padding: "12px 16px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="bg-slate-50" style={{ padding: "12px 16px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 12 }}>
           {logo && (
             <img 
               src={logo} 
@@ -111,16 +115,7 @@ export default function Teams() {
             return (
               <div key={tier}>
                 {/* Tier Label */}
-                <div style={{ 
-                  background: "#f1f5f9", 
-                  padding: "6px 16px", 
-                  fontSize: "0.7rem", 
-                  fontWeight: 700, 
-                  color: "var(--text-secondary)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  borderBottom: "1px solid var(--divider)"
-                }}>
+                <div className="section-header">
                   Tier {tier}
                 </div>
 
@@ -132,20 +127,18 @@ export default function Teams() {
                   const hcp = handicaps?.[pid];
                   
                   return (
-                    <div key={pid} style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      alignItems: "center",
-                      padding: "12px 16px",
-                      borderBottom: "1px solid var(--divider)"
-                    }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                        <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{name}</span>
+                    <div 
+                      key={pid} 
+                      className="flex justify-between items-center px-4 py-3 border-b border-slate-200 
+                                 hover:bg-slate-50 transition-colors duration-150"
+                    >
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold">{name}</span>
                         {hcp != null && (
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>({hcp})</span>
+                          <span className="text-xs text-slate-500">({hcp})</span>
                         )}
                       </div>
-                      <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                      <div className="text-sm text-slate-500 font-mono">
                         {s ? `${s.wins}-${s.losses}-${s.halves}` : "0-0-0"}
                       </div>
                     </div>
@@ -159,8 +152,17 @@ export default function Teams() {
     );
   };
 
-  if (loading) return <div style={{ padding: 20, textAlign: "center" }}>Loading...</div>;
-  if (error) return <div style={{ padding: 20, textAlign: "center" }}>{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="spinner-lg"></div>
+    </div>
+  );
+  if (error) return (
+    <div className="p-5 text-center text-red-600">
+      <div className="text-2xl mb-2">⚠️</div>
+      <div>{error}</div>
+    </div>
+  );
 
   return (
     <Layout title="Team Rosters" series={tournament?.series} showBack>

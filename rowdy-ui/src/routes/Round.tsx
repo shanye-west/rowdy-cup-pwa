@@ -116,9 +116,23 @@ export default function Round() {
     return p.username || "Unknown";
   };
 
-  if (loading) return <div style={{ padding: 20, textAlign: 'center' }}>Loading...</div>;
-  if (error) return <div style={{ padding: 20, color: "var(--error, #b00020)" }}>{error}</div>;
-  if (!round) return <div style={{ padding: 20 }}>Round not found.</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="spinner-lg"></div>
+    </div>
+  );
+  if (error) return (
+    <div className="p-5 text-center text-red-600">
+      <div className="text-2xl mb-2">⚠️</div>
+      <div>{error}</div>
+    </div>
+  );
+  if (!round) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">🔍</div>
+      <div className="empty-state-text">Round not found.</div>
+    </div>
+  );
 
   const tName = tournament?.name || "Round Detail";
   const tSeries = tournament?.series;
@@ -164,10 +178,15 @@ export default function Round() {
         {/* MATCH CARDS */}
         <section style={{ display: "grid", gap: 12 }}>
           {matches.length === 0 ? (
-            <div style={{ padding: 20, fontStyle: "italic", opacity: 0.6, textAlign: 'center' }}>No matches scheduled.</div>
+            <div className="empty-state">
+              <div className="empty-state-icon">📋</div>
+              <div className="empty-state-text">No matches scheduled.</div>
+            </div>
           ) : (
             matches.map((m) => {
               const statusText = formatMatchStatus(m.status, tournament?.teamA?.name, tournament?.teamB?.name);
+              const isClosed = m.status?.closed === true;
+              const isStarted = (m.status?.thru ?? 0) > 0;
               
               // Determine border color based on leader
               let borderColor = "transparent";
@@ -182,14 +201,19 @@ export default function Round() {
                  bgStyle = { background: `linear-gradient(-90deg, ${borderColor}11 0%, transparent 30%)` };
               }
 
+              // Badge style based on match state
+              const badgeClass = isClosed 
+                ? "badge-success" 
+                : isStarted 
+                  ? "badge-info" 
+                  : "badge-default";
+
               return (
                 <Link 
                   key={m.id} 
                   to={`/match/${m.id}`} 
-                  className="card"
+                  className="card card-hover"
                   style={{ 
-                    textDecoration: "none", 
-                    color: "inherit", 
                     display: "grid", 
                     gridTemplateColumns: "1fr auto 1fr",
                     gap: 12,
@@ -200,16 +224,16 @@ export default function Round() {
                   }}
                 >
                   {/* Left: Team A Players */}
-                  <div style={{ textAlign: "left", fontSize: "0.9rem", lineHeight: 1.3 }}>
+                  <div className="text-left text-sm leading-tight">
                     {(m.teamAPlayers || []).map((p, i) => (
-                        <div key={i} style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                        <div key={i} className="font-semibold text-slate-900">
                             {getPlayerName(p.playerId)}
                         </div>
                     ))}
                   </div>
 
                   {/* Center: Status */}
-                  <div className="status-badge" style={{ whiteSpace: 'nowrap' }}>
+                  <div className={badgeClass} style={{ whiteSpace: 'nowrap' }}>
                     {statusText.includes("wins") 
                         ? statusText.split(" wins ")[1] // "3 & 2" instead of "Team A wins 3 & 2"
                         : statusText
@@ -217,9 +241,9 @@ export default function Round() {
                   </div>
 
                   {/* Right: Team B Players */}
-                  <div style={{ textAlign: "right", fontSize: "0.9rem", lineHeight: 1.3 }}>
+                  <div className="text-right text-sm leading-tight">
                     {(m.teamBPlayers || []).map((p, i) => (
-                        <div key={i} style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                        <div key={i} className="font-semibold text-slate-900">
                             {getPlayerName(p.playerId)}
                         </div>
                     ))}

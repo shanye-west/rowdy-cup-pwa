@@ -94,7 +94,11 @@ export default function App() {
     return { stats: { fA, fB, pA, pB }, roundStats: rStats };
   }, [matchesByRound, rounds]);
 
-  if (loading) return <div style={{ padding: 16, textAlign: 'center', marginTop: 40 }}>Loading...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="spinner-lg"></div>
+    </div>
+  );
 
   const tName = tournament?.name || "Rowdy Cup";
   const tSeries = tournament?.series; // "rowdyCup" or "christmasClassic"
@@ -102,8 +106,9 @@ export default function App() {
   return (
     <Layout title={tName} series={tSeries}>
       {!tournament ? (
-        <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)' }}>
-          No active tournament found.
+        <div className="empty-state">
+          <div className="empty-state-icon">🏌️</div>
+          <div className="empty-state-text">No active tournament found.</div>
         </div>
       ) : (
         <div style={{ padding: 16, display: "grid", gap: 24 }}>
@@ -143,7 +148,7 @@ export default function App() {
                     final={stats.fA}
                     proj={stats.pA}
                     color={tournament.teamA?.color || "var(--team-a-default)"}
-                    projectionColor="#64748b"
+                    projectionColor="var(--text-secondary)"
                   />
                 </div>
               </div>
@@ -173,7 +178,7 @@ export default function App() {
                     final={stats.fB}
                     proj={stats.pB}
                     color={tournament.teamB?.color || "var(--team-b-default)"}
-                    projectionColor="#64748b"
+                    projectionColor="var(--text-secondary)"
                   />
                 </div>
               </div>
@@ -181,22 +186,9 @@ export default function App() {
           </section>
 
           {/* ACTIONS BUTTON */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-            <Link to="/teams" style={{ textDecoration: 'none' }}>
-              <button style={{ 
-                width: '100%', 
-                padding: '14px', 
-                background: 'white', 
-                color: 'var(--brand-primary)',
-                border: '1px solid var(--divider)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-              }}>
+          <div className="grid gap-3">
+            <Link to="/teams">
+              <button className="btn-secondary w-full uppercase tracking-wide">
                 View Team Rosters
               </button>
             </Link>
@@ -221,15 +213,7 @@ export default function App() {
                 <Link 
                   key={r.id} 
                   to={`/round/${r.id}`} 
-                  className="card" 
-                  style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center", 
-                    textDecoration: "none", 
-                    color: "inherit",
-                    transition: "transform 0.1s active"
-                  }}
+                  className="card card-hover flex justify-between items-center"
                 >
                   <div>
                     <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: 2 }}>Round {idx + 1}</div>
@@ -240,14 +224,14 @@ export default function App() {
                       final={rs.fA}
                       proj={rs.pA}
                       color={tournament.teamA?.color}
-                      projectionColor="#64748b"
+                      projectionColor="var(--text-secondary)"
                     />
                     <span style={{ margin: "0 8px", opacity: 0.3, fontWeight: 400 }}>-</span>
                     <ScoreBlock
                       final={rs.fB}
                       proj={rs.pB}
                       color={tournament.teamB?.color}
-                      projectionColor="#64748b"
+                      projectionColor="var(--text-secondary)"
                     />
                   </div>
                 </Link>
