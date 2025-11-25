@@ -283,15 +283,9 @@ export default function Match() {
       let leader: "A" | "B" | null;
       
       if (teamAScore == null || teamBScore == null) {
-        // Hole not complete - show previous status or empty
-        if (i === 0) {
-          status = "";
-          leader = null;
-        } else {
-          // Carry forward previous status display
-          status = result[i - 1]?.status || "";
-          leader = result[i - 1]?.leader || null;
-        }
+        // Hole not complete - leave blank (don't carry forward)
+        status = "";
+        leader = null;
       } else if (teamAUp === 0) {
         status = "AS";
         leader = null;
@@ -571,15 +565,8 @@ export default function Match() {
                       </td>
                     );
                   })}
-                  {/* OUT status (show status after hole 9) */}
-                  <td className="py-1 bg-slate-700 border-l-2 border-slate-600">
-                    <div 
-                      className="text-xs font-bold"
-                      style={{ color: runningMatchStatus[8]?.leader === "A" ? teamAColor : runningMatchStatus[8]?.leader === "B" ? teamBColor : "#94a3b8" }}
-                    >
-                      {runningMatchStatus[8]?.status || ""}
-                    </div>
-                  </td>
+                  {/* OUT status - always blank */}
+                  <td className="py-1 bg-slate-700 border-l-2 border-slate-600"></td>
                   {/* Back 9 match status */}
                   {holes.slice(9, 18).map((h, i) => {
                     const { status, leader } = runningMatchStatus[9 + i];
@@ -595,24 +582,10 @@ export default function Match() {
                       </td>
                     );
                   })}
-                  {/* IN status (show status after hole 18) */}
-                  <td className="py-1 bg-slate-700 border-l-2 border-slate-600">
-                    <div 
-                      className="text-xs font-bold"
-                      style={{ color: runningMatchStatus[17]?.leader === "A" ? teamAColor : runningMatchStatus[17]?.leader === "B" ? teamBColor : "#94a3b8" }}
-                    >
-                      {runningMatchStatus[17]?.status || ""}
-                    </div>
-                  </td>
-                  {/* TOTAL status */}
-                  <td className="py-1 bg-slate-600">
-                    <div 
-                      className="text-sm font-extrabold"
-                      style={{ color: runningMatchStatus[17]?.leader === "A" ? teamAColor : runningMatchStatus[17]?.leader === "B" ? teamBColor : "#fff" }}
-                    >
-                      {runningMatchStatus[17]?.status || "AS"}
-                    </div>
-                  </td>
+                  {/* IN status - always blank */}
+                  <td className="py-1 bg-slate-700 border-l-2 border-slate-600"></td>
+                  {/* TOTAL status - always blank */}
+                  <td className="py-1 bg-slate-600"></td>
                 </tr>
 
                 {/* Team B Player Rows */}
