@@ -18,6 +18,7 @@ export default function Teams() {
   const [tournament, setTournament] = useState<TournamentDoc | null>(null);
   const [players, setPlayers] = useState<Record<string, PlayerDoc>>({});
   const [stats, setStats] = useState<Record<string, TournamentStat>>({});
+  const [selectedTeam, setSelectedTeam] = useState<"A" | "B">("A");
 
   useEffect(() => {
     (async () => {
@@ -81,7 +82,7 @@ export default function Teams() {
     })();
   }, []);
 
-  const renderRoster = (teamName: string, teamColor: string, roster?: TierMap, handicaps?: Record<string, number>, logo?: string) => {
+  const renderRoster = (teamColor: string, roster?: TierMap, handicaps?: Record<string, number>) => {
     if (!roster) return (
       <div className="card p-4 opacity-60">
         <div className="text-center text-slate-400">No roster defined.</div>
@@ -93,20 +94,6 @@ export default function Teams() {
 
     return (
       <div className="card" style={{ padding: 0, overflow: "hidden", borderTop: `4px solid ${teamColor}` }}>
-        {/* Team Header */}
-        <div className="bg-slate-50" style={{ padding: "12px 16px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 12 }}>
-          {logo && (
-            <img 
-              src={logo} 
-              alt={teamName}
-              style={{ width: 32, height: 32, objectFit: "contain" }}
-            />
-          )}
-          <h2 style={{ fontSize: "1rem", color: teamColor, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            {teamName}
-          </h2>
-        </div>
-        
         <div style={{ display: "flex", flexDirection: "column" }}>
           {tiers.map((tier) => {
             const pIds = roster[tier as keyof TierMap] || [];
@@ -164,26 +151,117 @@ export default function Teams() {
     </div>
   );
 
+  const teamAName = tournament?.teamA?.name || "Team A";
+  const teamBName = tournament?.teamB?.name || "Team B";
+  const teamAColor = tournament?.teamA?.color || "var(--team-a-default)";
+  const teamBColor = tournament?.teamB?.color || "var(--team-b-default)";
+  const teamALogo = tournament?.teamA?.logo;
+  const teamBLogo = tournament?.teamB?.logo;
+
   return (
     <Layout title="Team Rosters" series={tournament?.series} showBack tournamentLogo={tournament?.tournamentLogo}>
-      <div style={{ padding: 16, display: "grid", gap: 24, maxWidth: 800, margin: "0 auto" }}>
-        {/* Team A Card */}
-        {renderRoster(
-          tournament?.teamA?.name || "Team A", 
-          tournament?.teamA?.color || "var(--team-a-default)", 
-          tournament?.teamA?.rosterByTier,
-          tournament?.teamA?.handicapByPlayer,
-          tournament?.teamA?.logo
+      <div style={{ padding: 16, display: "grid", gap: 16, maxWidth: 800, margin: "0 auto" }}>
+        
+        {/* Team Selector Tabs */}
+        <div 
+          style={{ 
+            display: "grid", 
+            gridTemplateColumns: "1fr 1fr", 
+            borderRadius: 12, 
+            overflow: "hidden",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            border: "1px solid var(--divider)",
+          }}
+        >
+          {/* Team A Tab */}
+          <button
+            onClick={() => setSelectedTeam("A")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              padding: "14px 12px",
+              border: "none",
+              cursor: "pointer",
+              background: selectedTeam === "A" 
+                ? `color-mix(in srgb, ${teamAColor} 15%, white)` 
+                : "white",
+              borderBottom: selectedTeam === "A" ? `3px solid ${teamAColor}` : "3px solid transparent",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {teamALogo && (
+              <img 
+                src={teamALogo} 
+                alt={teamAName}
+                style={{ width: 28, height: 28, objectFit: "contain" }}
+              />
+            )}
+            <span style={{ 
+              fontWeight: 700, 
+              fontSize: "0.95rem",
+              color: selectedTeam === "A" ? teamAColor : "var(--text-secondary)",
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+            }}>
+              {teamAName}
+            </span>
+          </button>
+
+          {/* Team B Tab */}
+          <button
+            onClick={() => setSelectedTeam("B")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              padding: "14px 12px",
+              border: "none",
+              borderLeft: "1px solid var(--divider)",
+              cursor: "pointer",
+              background: selectedTeam === "B" 
+                ? `color-mix(in srgb, ${teamBColor} 15%, white)` 
+                : "white",
+              borderBottom: selectedTeam === "B" ? `3px solid ${teamBColor}` : "3px solid transparent",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {teamBLogo && (
+              <img 
+                src={teamBLogo} 
+                alt={teamBName}
+                style={{ width: 28, height: 28, objectFit: "contain" }}
+              />
+            )}
+            <span style={{ 
+              fontWeight: 700, 
+              fontSize: "0.95rem",
+              color: selectedTeam === "B" ? teamBColor : "var(--text-secondary)",
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+            }}>
+              {teamBName}
+            </span>
+          </button>
+        </div>
+
+        {/* Selected Team Roster */}
+        {selectedTeam === "A" ? (
+          renderRoster(
+            teamAColor, 
+            tournament?.teamA?.rosterByTier,
+            tournament?.teamA?.handicapByPlayer
+          )
+        ) : (
+          renderRoster(
+            teamBColor, 
+            tournament?.teamB?.rosterByTier,
+            tournament?.teamB?.handicapByPlayer
+          )
         )}
 
-        {/* Team B Card */}
-        {renderRoster(
-          tournament?.teamB?.name || "Team B", 
-          tournament?.teamB?.color || "var(--team-b-default)", 
-          tournament?.teamB?.rosterByTier,
-          tournament?.teamB?.handicapByPlayer,
-          tournament?.teamB?.logo
-        )}
         <LastUpdated />
       </div>
     </Layout>
