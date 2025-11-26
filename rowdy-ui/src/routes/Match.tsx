@@ -54,7 +54,7 @@ function PostMatchStats({
   const teamAPlayerIds = teamAPlayers.map(p => p.playerId);
   const teamBPlayerIds = teamBPlayers.map(p => p.playerId);
 
-  // Stat row component
+  // Stat row component for team-level stats (1 value per team)
   const StatRow = ({ label, valueA, valueB, highlight = false }: { 
     label: string; 
     valueA: string | number | null | undefined; 
@@ -74,31 +74,55 @@ function PostMatchStats({
     </div>
   );
 
-  // Stat row for per-player stats (2 players per team in team formats)
-  const PlayerStatRow = ({ label, teamA, teamB }: { 
+  // Player names header row for per-player stat sections
+  const PlayerNamesHeader = () => (
+    <div className="flex items-center py-1 mb-1 border-b border-slate-100">
+      <div className="flex-1 text-right pr-1">
+        <span className="text-xs font-semibold truncate" style={{ color: teamAColor }}>
+          {getPlayerName(teamAPlayerIds[0])}
+        </span>
+      </div>
+      <div className="flex-1 text-right pr-3">
+        <span className="text-xs font-semibold truncate" style={{ color: teamAColor }}>
+          {getPlayerName(teamAPlayerIds[1])}
+        </span>
+      </div>
+      <div className="w-24 shrink-0" />
+      <div className="flex-1 text-left pl-3">
+        <span className="text-xs font-semibold truncate" style={{ color: teamBColor }}>
+          {getPlayerName(teamBPlayerIds[0])}
+        </span>
+      </div>
+      <div className="flex-1 text-left pl-1">
+        <span className="text-xs font-semibold truncate" style={{ color: teamBColor }}>
+          {getPlayerName(teamBPlayerIds[1])}
+        </span>
+      </div>
+    </div>
+  );
+
+  // Stat row for per-player stats (4 columns: 2 players per team)
+  const PlayerStatRow = ({ label, teamA, teamB, highlight = false }: { 
     label: string; 
     teamA: (string | number | null | undefined)[];
     teamB: (string | number | null | undefined)[];
+    highlight?: boolean;
   }) => (
-    <div className="flex items-center py-1.5">
+    <div className={`flex items-center py-1.5 ${highlight ? "bg-slate-50 -mx-2 px-2 rounded" : ""}`}>
+      <div className="flex-1 text-right pr-1 font-semibold text-sm" style={{ color: teamAColor }}>
+        {teamA[0] ?? "–"}
+      </div>
       <div className="flex-1 text-right pr-3 font-semibold text-sm" style={{ color: teamAColor }}>
-        {teamA.map((v, i) => (
-          <span key={i}>
-            {v ?? "–"}
-            {i < teamA.length - 1 && <span className="text-slate-300 mx-1">/</span>}
-          </span>
-        ))}
+        {teamA[1] ?? "–"}
       </div>
       <div className="text-xs text-slate-500 font-medium text-center w-24 shrink-0">
         {label}
       </div>
       <div className="flex-1 text-left pl-3 font-semibold text-sm" style={{ color: teamBColor }}>
-        {teamB.map((v, i) => (
-          <span key={i}>
-            {v ?? "–"}
-            {i < teamB.length - 1 && <span className="text-slate-300 mx-1">/</span>}
-          </span>
-        ))}
+        {teamB[0] ?? "–"}
+      </div>
+      <div className="flex-1 text-left pl-1 font-semibold text-sm" style={{ color: teamBColor }}>
+        {teamB[1] ?? "–"}
       </div>
     </div>
   );
@@ -196,6 +220,7 @@ function PostMatchStats({
           ) : (
             // Best Ball: two players per team
             <>
+              <PlayerNamesHeader />
               <PlayerStatRow 
                 label="Total Gross" 
                 teamA={teamAFacts.map(f => f.totalGross)} 
@@ -252,6 +277,7 @@ function PostMatchStats({
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 text-center">
             Ball Usage
           </div>
+          <PlayerNamesHeader />
           <PlayerStatRow 
             label="Balls Used" 
             teamA={teamAFacts.map(f => f.ballsUsed)} 
@@ -286,6 +312,7 @@ function PostMatchStats({
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 text-center">
             Drives
           </div>
+          <PlayerNamesHeader />
           <PlayerStatRow 
             label="Drives Used" 
             teamA={teamAFacts.map(f => f.drivesUsed)} 
@@ -327,17 +354,6 @@ function PostMatchStats({
           />
         )}
       </div>
-
-      {/* Player names legend for team formats */}
-      {(format === "twoManBestBall" || format === "twoManShamble" || format === "twoManScramble") && (
-        <div className="border-t border-slate-200 pt-3">
-          <div className="text-xs text-slate-400 text-center">
-            <span style={{ color: teamAColor }}>{teamAPlayerIds.map(id => getPlayerName(id)).join(" / ")}</span>
-            <span className="mx-2">vs</span>
-            <span style={{ color: teamBColor }}>{teamBPlayerIds.map(id => getPlayerName(id)).join(" / ")}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
