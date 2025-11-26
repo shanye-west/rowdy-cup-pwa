@@ -65,12 +65,17 @@ export default function App() {
     let fA = 0, fB = 0, pA = 0, pB = 0;
     const rStats: Record<string, { fA: number; fB: number; pA: number; pB: number }> = {};
 
-    rounds.forEach(r => { rStats[r.id] = { fA: 0, fB: 0, pA: 0, pB: 0 }; });
+    // Create a lookup for round pointsValue
+    const roundPvLookup: Record<string, number> = {};
+    rounds.forEach(r => { 
+      rStats[r.id] = { fA: 0, fB: 0, pA: 0, pB: 0 }; 
+      roundPvLookup[r.id] = r.pointsValue ?? 1;
+    });
 
     const allMatches = Object.values(matchesByRound).flat();
 
     for (const m of allMatches) {
-      const pv = m.pointsValue ?? 1;
+      const pv = m.roundId ? (roundPvLookup[m.roundId] ?? 1) : 1;
       const w = m.result?.winner;
       
       const ptsA = w === "teamA" ? pv : w === "AS" ? pv / 2 : 0;

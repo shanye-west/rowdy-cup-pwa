@@ -98,7 +98,6 @@ export const seedMatchBoilerplate = onDocumentCreated("matches/{matchId}", async
 
   await matchRef.set({
     tournamentId, roundId,
-    pointsValue: match.pointsValue == null ? 1 : match.pointsValue,
     teamAPlayers: teamA, teamBPlayers: teamB,
     status: match.status ?? defaultStatus(),
     holes,
@@ -128,6 +127,7 @@ export const seedRoundDefaults = onDocumentCreated("rounds/{roundId}", async (ev
   if (data.format === undefined) toMerge.format = null;
   if (data.courseId === undefined) toMerge.courseId = null;
   if (data.locked === undefined) toMerge.locked = false;
+  if (data.pointsValue === undefined) toMerge.pointsValue = 1;
   if (Object.keys(toMerge).length > 0) {
     toMerge._seededAt = FieldValue.serverTimestamp();
     await ref.set(toMerge, { merge: true });
@@ -283,11 +283,11 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
 
   const result = after.result || {};
   const status = after.status || {};
-  const points = after.pointsValue ?? 1;
   const tId = after.tournamentId || "";
   const rId = after.roundId || "";
   
   let format = "unknown";
+  let points = 1;
   let playerTierLookup: Record<string, string> = {};
   let playerHandicapLookup: Record<string, number> = {};
   let teamAId = "teamA";
@@ -296,7 +296,11 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   // Fetch Context (Round & Tournament)
   if (rId) {
     const rSnap = await db.collection("rounds").doc(rId).get();
-    if (rSnap.exists) format = rSnap.data()?.format || "unknown";
+    if (rSnap.exists) {
+      const rData = rSnap.data();
+      format = rData?.format || "unknown";
+      points = rData?.pointsValue ?? 1;
+    }
   }
   if (tId) {
     const tSnap = await db.collection("tournaments").doc(tId).get();

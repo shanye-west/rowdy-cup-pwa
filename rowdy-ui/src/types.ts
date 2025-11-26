@@ -55,6 +55,7 @@ export type RoundDoc = {
   format: RoundFormat;
   locked?: boolean;
   courseId?: string; // Reference to courses collection
+  pointsValue?: number; // Points value for all matches in this round
   
   // Legacy: embedded course data (may not be present)
   course?: {
@@ -76,7 +77,6 @@ export type MatchDoc = {
   id: string;
   roundId: string;
   tournamentId?: string;
-  pointsValue: number;
   holes?: Record<string, { input: any }>;
   result?: { 
     winner?: "teamA" | "teamB" | "AS";

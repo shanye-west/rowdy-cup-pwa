@@ -89,8 +89,8 @@ export default function Round() {
 
   const stats = useMemo(() => {
     let fA = 0, fB = 0, pA = 0, pB = 0;
+    const pv = round?.pointsValue ?? 1;
     for (const m of matches) {
-      const pv = m.pointsValue ?? 1;
       const w = m.result?.winner;
       const ptsA = w === "teamA" ? pv : w === "AS" ? pv / 2 : 0;
       const ptsB = w === "teamB" ? pv : w === "AS" ? pv / 2 : 0;
@@ -101,7 +101,7 @@ export default function Round() {
       else if (isStarted) { pA += ptsA; pB += ptsB; }
     }
     return { fA, fB, pA, pB };
-  }, [matches]);
+  }, [matches, round]);
 
   const getPlayerName = (pid: string) => {
     const p = players[pid];
