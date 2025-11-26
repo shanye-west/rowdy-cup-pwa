@@ -17,14 +17,15 @@ function emptyHolesFor(format: RoundFormat) {
   for (let i = 1; i <= 18; i++) {
     const k = String(i);
     if (format === "twoManScramble") {
-      // DRIVE_TRACKING: Added teamADrive/teamBDrive fields
+      // Scramble: one score per team + drive tracking
       holes[k] = { input: { teamAGross: null, teamBGross: null, teamADrive: null, teamBDrive: null } };
     } else if (format === "singles") {
       holes[k] = { input: { teamAPlayerGross: null, teamBPlayerGross: null } };
     } else if (format === "twoManShamble") {
-      // DRIVE_TRACKING: Added teamADrive/teamBDrive fields for shamble
+      // Shamble: individual player scores + drive tracking
       holes[k] = { input: { teamAPlayersGross: [null, null], teamBPlayersGross: [null, null], teamADrive: null, teamBDrive: null } };
     } else {
+      // Best Ball: individual player scores
       holes[k] = { input: { teamAPlayersGross: [null, null], teamBPlayersGross: [null, null] } };
     }
   }
@@ -61,9 +62,9 @@ function normalizeHoles(existing: Record<string, any> | undefined, format: Round
     const exInput = ex.input ?? {};
     
     if (format === "twoManScramble") {
+      // Scramble: one score per team + drive tracking
       const a = exInput.teamAGross ?? null;
       const b = exInput.teamBGross ?? null;
-      // DRIVE_TRACKING: Preserve drive selections
       const aDrive = exInput.teamADrive ?? null;
       const bDrive = exInput.teamBDrive ?? null;
       holes[k] = { input: { teamAGross: a, teamBGross: b, teamADrive: aDrive, teamBDrive: bDrive } };
@@ -74,14 +75,15 @@ function normalizeHoles(existing: Record<string, any> | undefined, format: Round
       if (b == null && Array.isArray(exInput.teamBPlayersGross)) b = exInput.teamBPlayersGross[0] ?? null;
       holes[k] = { input: { teamAPlayerGross: a ?? null, teamBPlayerGross: b ?? null } };
     } else if (format === "twoManShamble") {
+      // Shamble: individual player scores + drive tracking
       const aArr = Array.isArray(exInput.teamAPlayersGross) ? exInput.teamAPlayersGross : [null, null];
       const bArr = Array.isArray(exInput.teamBPlayersGross) ? exInput.teamBPlayersGross : [null, null];
       const norm2 = (arr: any[]) => [arr[0] ?? null, arr[1] ?? null];
-      // DRIVE_TRACKING: Preserve drive selections for shamble
       const aDrive = exInput.teamADrive ?? null;
       const bDrive = exInput.teamBDrive ?? null;
       holes[k] = { input: { teamAPlayersGross: norm2(aArr), teamBPlayersGross: norm2(bArr), teamADrive: aDrive, teamBDrive: bDrive } };
     } else {
+      // Best Ball: individual player scores
       const aArr = Array.isArray(exInput.teamAPlayersGross) ? exInput.teamAPlayersGross : [null, null];
       const bArr = Array.isArray(exInput.teamBPlayersGross) ? exInput.teamBPlayersGross : [null, null];
       const norm2 = (arr: any[]) => [arr[0] ?? null, arr[1] ?? null];
@@ -210,6 +212,7 @@ function holesRange(obj: Record<string, any>) {
 function decideHole(format: RoundFormat, i: number, match: any) {
   const h = match.holes?.[String(i)]?.input ?? {};
   if (format === "twoManScramble") {
+    // Scramble: one gross score per team
     const { teamAGross: a, teamBGross: b } = h;
     if (!isNum(a) || !isNum(b)) return null;
     return a < b ? "teamA" : b < a ? "teamB" : "AS";
@@ -221,14 +224,24 @@ function decideHole(format: RoundFormat, i: number, match: any) {
     const bNet = bG - clamp01(match.teamBPlayers?.[0]?.strokesReceived?.[i-1]);
     return aNet < bNet ? "teamA" : bNet < aNet ? "teamB" : "AS";
   }
-  // BestBall/Shamble
+  if (format === "twoManShamble") {
+    // Shamble: individual player scores, GROSS only (no strokes applied)
+    const aArr = to2(h.teamAPlayersGross || []);
+    const bArr = to2(h.teamBPlayersGross || []);
+    if (aArr[0]==null || aArr[1]==null || bArr[0]==null || bArr[1]==null) return null;
+    
+    // Best GROSS (no handicap) for each team
+    const aBest = Math.min(aArr[0]!, aArr[1]!);
+    const bBest = Math.min(bArr[0]!, bArr[1]!);
+    return aBest < bBest ? "teamA" : bBest < aBest ? "teamB" : "AS";
+  }
+  // Best Ball: individual player scores with NET calculation
   const aArr = to2(h.teamAPlayersGross || []);
   const bArr = to2(h.teamBPlayersGross || []);
   if (aArr[0]==null || aArr[1]==null || bArr[0]==null || bArr[1]==null) return null;
 
-  const useHcp = (format === "twoManBestBall");
   const getNet = (g:number|null, pIdx:number, teamArr:any[]) => {
-    const s = useHcp ? clamp01(teamArr?.[pIdx]?.strokesReceived?.[i-1]) : 0;
+    const s = clamp01(teamArr?.[pIdx]?.strokesReceived?.[i-1]);
     return g! - s;
   };
   const aBest = Math.min(getNet(aArr[0],0,match.teamAPlayers), getNet(aArr[1],1,match.teamAPlayers));
@@ -453,6 +466,22 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       }
     }
     
+    // Shamble: Track whose ball was used (which player had lower GROSS - no strokes)
+    if (format === "twoManShamble") {
+      const aArr = h.teamAPlayersGross;
+      const bArr = h.teamBPlayersGross;
+      
+      if (Array.isArray(aArr) && aArr[0] != null && aArr[1] != null) {
+        if (aArr[0] <= aArr[1]) teamABallsUsed[0]++;
+        if (aArr[1] <= aArr[0]) teamABallsUsed[1]++;
+      }
+      
+      if (Array.isArray(bArr) && bArr[0] != null && bArr[1] != null) {
+        if (bArr[0] <= bArr[1]) teamBBallsUsed[0]++;
+        if (bArr[1] <= bArr[0]) teamBBallsUsed[1]++;
+      }
+    }
+    
     // DRIVE_TRACKING: Track drives used for scramble/shamble
     if (format === "twoManScramble" || format === "twoManShamble") {
       const aDrive = h.teamADrive;
@@ -492,9 +521,9 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       ? p.strokesReceived.reduce((sum: number, v: number) => sum + (v || 0), 0)
       : 0;
     
-    // NEW: ballsUsed - only for best ball
+    // NEW: ballsUsed - for best ball and shamble
     let ballsUsed: number | null = null;
-    if (format === "twoManBestBall") {
+    if (format === "twoManBestBall" || format === "twoManShamble") {
       ballsUsed = team === "teamA" ? teamABallsUsed[pIdx] : teamBBallsUsed[pIdx];
     }
     
