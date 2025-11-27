@@ -250,8 +250,10 @@ export default function Round() {
                 bgStyle = { backgroundColor: winnerColor };
                 textColor = "text-white";
               } else if (isClosed && winner === "AS") {
-                // Halved match - grey background
-                bgStyle = { backgroundColor: "#94a3b8" };
+                // Halved match - gradient from team A to team B
+                const teamAColor = tournament?.teamA?.color || "var(--team-a-default)";
+                const teamBColor = tournament?.teamB?.color || "var(--team-b-default)";
+                bgStyle = { background: `linear-gradient(90deg, ${teamAColor} 0%, ${teamBColor} 100%)` };
                 textColor = "text-white";
               } else if (leader === 'teamA') {
                 borderColor = tournament?.teamA?.color || "var(--team-a-default)";
