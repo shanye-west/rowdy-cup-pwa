@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { doc, onSnapshot, getDoc, updateDoc, getDocs, collection, where, query, documentId } from "firebase/firestore";
 import { db } from "../firebase";
 import type { TournamentDoc, PlayerDoc, MatchDoc, RoundDoc, RoundFormat, CourseDoc, PlayerMatchFact } from "../types";
-import { formatMatchStatus } from "../utils";
+import { formatMatchStatus, formatRoundType } from "../utils";
 import Layout from "../components/Layout";
 import LastUpdated from "../components/LastUpdated";
 
@@ -1285,7 +1285,7 @@ export default function Match() {
                 <span>NOT STARTED</span>
               )}
               <span>•</span>
-              <span>{format}</span>
+              <span>{formatRoundType(format)}</span>
             </div>
           </div>
           
