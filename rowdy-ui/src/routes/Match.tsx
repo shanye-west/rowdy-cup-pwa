@@ -1342,7 +1342,7 @@ export default function Match() {
                     <>
                       <div style={{ 
                         whiteSpace: 'nowrap',
-                        fontSize: '0.9rem',
+                        fontSize: '1rem',
                         fontWeight: 700,
                         color: '#334155'
                       }}>
@@ -1375,7 +1375,7 @@ export default function Match() {
                       </div>
                       <div style={{ 
                         whiteSpace: 'nowrap',
-                        fontSize: '0.9rem',
+                        fontSize: '1rem',
                         fontWeight: 700,
                         color: 'white'
                       }}>
@@ -1412,7 +1412,7 @@ export default function Match() {
                     </div>
                     <div style={{ 
                       whiteSpace: 'nowrap',
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
                       fontWeight: 700,
                       color: statusColor
                     }}>
@@ -1433,7 +1433,7 @@ export default function Match() {
                   <>
                     <div style={{ 
                       whiteSpace: 'nowrap',
-                      fontSize: '0.85rem',
+                      fontSize: '1rem',
                       fontWeight: 700,
                       color: '#94a3b8'
                     }}>
