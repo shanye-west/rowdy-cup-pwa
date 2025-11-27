@@ -261,7 +261,7 @@ export default function Round() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: `linear-gradient(${winner === 'teamA' ? '90deg' : '-90deg'}, ${winnerColor} 0%, ${winnerColor}66 100%)`,
+                    backgroundColor: winnerColor,
                     clipPath,
                     pointerEvents: 'none',
                     borderRadius: 'inherit'
