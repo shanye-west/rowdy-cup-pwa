@@ -309,8 +309,20 @@ export default function Round() {
                       </div>
                     )}
                     {isClosed ? (
-                      // Completed: show team name above score
+                      // Completed: show "wins X & Y" format
                       <>
+                        <div style={{ 
+                          whiteSpace: 'nowrap',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          color: 'white'
+                        }}>
+                          {/* Extract just the score part: "4 & 3", "1 UP", or "Halved" */}
+                          {winner === 'AS' 
+                            ? 'HALVED'
+                            : `WINS ${statusText.includes("wins") ? statusText.split(" wins ")[1] : statusText}`
+                          }
+                        </div>
                         <div style={{ 
                           fontSize: '0.65rem', 
                           fontWeight: 600, 
@@ -322,25 +334,21 @@ export default function Round() {
                             ? (tournament?.teamA?.name || 'Team A')
                             : winner === 'teamB'
                               ? (tournament?.teamB?.name || 'Team B')
-                              : 'Match'
-                          }
-                        </div>
-                        <div style={{ 
-                          whiteSpace: 'nowrap',
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          color: 'white'
-                        }}>
-                          {/* Extract just the score part: "4 & 3", "1 UP", or "Halved" */}
-                          {statusText.includes("wins") 
-                            ? statusText.split(" wins ")[1]
-                            : statusText
+                              : ''
                           }
                         </div>
                       </>
                     ) : isStarted && leader ? (
-                      // In progress with leader: team name + margin in team color (no pill)
+                      // In progress with leader: margin on top, team name below in team color
                       <>
+                        <div style={{ 
+                          whiteSpace: 'nowrap',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          color: statusColor
+                        }}>
+                          {m.status?.margin} UP
+                        </div>
                         <div style={{ 
                           fontSize: '0.65rem', 
                           fontWeight: 600, 
@@ -352,14 +360,6 @@ export default function Round() {
                             ? (tournament?.teamA?.name || 'Team A')
                             : (tournament?.teamB?.name || 'Team B')
                           }
-                        </div>
-                        <div style={{ 
-                          whiteSpace: 'nowrap',
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: statusColor
-                        }}>
-                          {m.status?.margin} UP
                         </div>
                       </>
                     ) : isStarted ? (
