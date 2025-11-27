@@ -13,11 +13,11 @@ type MatchFlowGraphProps = {
   marginHistory: number[];
   teamAColor: string;
   teamBColor: string;
-  teamAName: string;
-  teamBName: string;
+  teamALogo?: string;
+  teamBLogo?: string;
 };
 
-function MatchFlowGraph({ marginHistory, teamAColor, teamBColor, teamAName, teamBName }: MatchFlowGraphProps) {
+function MatchFlowGraph({ marginHistory, teamAColor, teamBColor, teamALogo, teamBLogo }: MatchFlowGraphProps) {
   if (!marginHistory || marginHistory.length === 0) return null;
 
   // Chart dimensions
@@ -85,36 +85,51 @@ function MatchFlowGraph({ marginHistory, teamAColor, teamBColor, teamAName, team
     );
   }
 
-  // Generate dots with status labels (just the number, no "UP")
-  const dotsAndLabels = data.slice(1).map((margin, i) => {
+  // Generate horizontal grid lines for each margin level (1, 2, 3, etc.)
+  const gridLines = [];
+  for (let m = 1; m <= maxMargin; m++) {
+    // Team A side (positive)
+    gridLines.push(
+      <line
+        key={`grid-a-${m}`}
+        x1={`${padding.left}%`}
+        y1={getY(m)}
+        x2={`${padding.left + chartWidth}%`}
+        y2={getY(m)}
+        stroke="#e2e8f0"
+        strokeWidth={0.5}
+      />
+    );
+    // Team B side (negative)
+    gridLines.push(
+      <line
+        key={`grid-b-${m}`}
+        x1={`${padding.left}%`}
+        y1={getY(-m)}
+        x2={`${padding.left + chartWidth}%`}
+        y2={getY(-m)}
+        stroke="#e2e8f0"
+        strokeWidth={0.5}
+      />
+    );
+  }
+
+  // Generate dots (no labels)
+  const dots = data.slice(1).map((margin, i) => {
     const x = getX(i + 1);
     const y = getY(margin);
     const color = margin > 0 ? teamAColor : margin < 0 ? teamBColor : "#94a3b8";
-    const absMargin = Math.abs(margin);
     
     return (
-      <g key={`dot-${i}`}>
-        <circle
-          cx={`${x}%`}
-          cy={y}
-          r={4}
-          fill={color}
-          stroke="white"
-          strokeWidth={1.5}
-        />
-        {margin !== 0 && (
-          <text
-            x={`${x}%`}
-            y={y - 8}
-            textAnchor="middle"
-            fontSize={8}
-            fontWeight={600}
-            fill={color}
-          >
-            {absMargin}
-          </text>
-        )}
-      </g>
+      <circle
+        key={`dot-${i}`}
+        cx={`${x}%`}
+        cy={y}
+        r={4}
+        fill={color}
+        stroke="white"
+        strokeWidth={1.5}
+      />
     );
   });
 
@@ -171,6 +186,9 @@ function MatchFlowGraph({ marginHistory, teamAColor, teamBColor, teamAName, team
           strokeDasharray="4 4"
         />
 
+        {/* Horizontal grid lines for margin levels */}
+        {gridLines}
+
         {/* Front 9 / Back 9 separator */}
         {numHoles > 9 && (
           <line
@@ -184,42 +202,42 @@ function MatchFlowGraph({ marginHistory, teamAColor, teamBColor, teamAName, team
           />
         )}
 
-        {/* Y-axis labels */}
+        {/* Y-axis team logos */}
+        {teamALogo && (
+          <image
+            href={teamALogo}
+            x={0}
+            y={padding.top - 2}
+            width={28}
+            height={28}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        )}
+        {teamBLogo && (
+          <image
+            href={teamBLogo}
+            x={0}
+            y={padding.top + chartHeight - 26}
+            width={28}
+            height={28}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        )}
         <text
-          x={`${padding.left - 3}%`}
-          y={padding.top + 10}
-          textAnchor="end"
-          fontSize={9}
-          fontWeight={600}
-          fill={teamAColor}
-        >
-          {teamAName}
-        </text>
-        <text
-          x={`${padding.left - 3}%`}
+          x={14}
           y={centerY + 4}
-          textAnchor="end"
+          textAnchor="middle"
           fontSize={8}
           fill="#94a3b8"
         >
           AS
         </text>
-        <text
-          x={`${padding.left - 3}%`}
-          y={padding.top + chartHeight - 2}
-          textAnchor="end"
-          fontSize={9}
-          fontWeight={600}
-          fill={teamBColor}
-        >
-          {teamBName}
-        </text>
 
         {/* Line segments */}
         {lineSegments}
 
-        {/* Dots and labels */}
-        {dotsAndLabels}
+        {/* Dots */}
+        {dots}
 
         {/* X-axis labels */}
         {xLabels}
@@ -1879,8 +1897,8 @@ export default function Match() {
             marginHistory={match.status.marginHistory}
             teamAColor={teamAColor}
             teamBColor={teamBColor}
-            teamAName={tournament?.teamA?.name || "Team A"}
-            teamBName={tournament?.teamB?.name || "Team B"}
+            teamALogo={tournament?.teamA?.logo}
+            teamBLogo={tournament?.teamB?.logo}
           />
         )}
 
