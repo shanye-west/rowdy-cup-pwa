@@ -504,11 +504,26 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
   
   const finalThru = status.thru || 18;
   
+  // DECIDED_ON_18: Track if match was decided by the 18th hole result
+  // We need to know the margin going INTO hole 18 and the 18th hole result
+  let marginGoingInto18 = 0;
+  let hole18Result: "teamA" | "teamB" | "AS" | null = null;
+  
   for (let i = 1; i <= finalThru; i++) {
     const h = holesData[String(i)]?.input ?? {};
     
+    // Capture margin going into hole 18 (before processing hole 18)
+    if (i === 18) {
+      marginGoingInto18 = runningMargin;
+    }
+    
     // Determine hole winner (reuse logic from decideHole)
     const holeResult = decideHole(format, i, after);
+    
+    // Capture hole 18 result
+    if (i === 18) {
+      hole18Result = holeResult;
+    }
     
     if (holeResult === "teamA") {
       runningMargin++;
@@ -808,6 +823,47 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
     // Player's own handicap
     const playerHandicap = playerHandicapLookup[p.playerId] ?? null;
 
+    // DECIDED_ON_18: Calculate if match was decided by 18th hole result
+    // A match is "decided on 18" if:
+    // 1. Match went to 18 holes (finalThru === 18 and not closed early)
+    // 2. The 18th hole result changed the outcome (wasn't just padding a lead)
+    // Specifically: AS going in + push to halve does NOT count
+    let decidedOn18 = false;
+    let won18thHole: boolean | null = null;
+    
+    if (finalThru === 18 && winningHole === null && hole18Result !== null) {
+      // Match went full 18 and wasn't closed early
+      const myTeamWon18 = (team === "teamA" && hole18Result === "teamA") || 
+                          (team === "teamB" && hole18Result === "teamB");
+      const myTeamLost18 = (team === "teamA" && hole18Result === "teamB") || 
+                           (team === "teamB" && hole18Result === "teamA");
+      const pushed18 = hole18Result === "AS";
+      
+      // Determine if decided on 18 based on margin going in and hole result
+      if (marginGoingInto18 === 0) {
+        // AS going into 18
+        if (!pushed18) {
+          // Someone won the hole to win the match - counts as decided on 18
+          decidedOn18 = true;
+          won18thHole = myTeamWon18 ? true : false;
+        }
+        // AS + push = halve, but NOT decided on 18 (excluded per spec)
+      } else if (Math.abs(marginGoingInto18) === 1) {
+        // 1UP going into 18 - opponent can tie the match by winning the hole
+        if ((marginGoingInto18 > 0 && team === "teamB" && hole18Result === "teamB") ||
+            (marginGoingInto18 < 0 && team === "teamA" && hole18Result === "teamA") ||
+            (marginGoingInto18 > 0 && team === "teamA" && hole18Result === "teamB") ||
+            (marginGoingInto18 < 0 && team === "teamB" && hole18Result === "teamA")) {
+          // Team trailing won hole 18 to halve the match
+          decidedOn18 = true;
+          won18thHole = myTeamWon18 ? true : myTeamLost18 ? false : null;
+        }
+        // 1UP + push = still win 1UP, NOT decided on 18
+        // 1UP + win another = win 2UP, NOT decided on 18
+      }
+      // 2UP+ going into 18 - match would have closed before 18, shouldn't reach here
+    }
+
     // --- 1. OPPONENTS ---
     const opponentIds: string[] = [];
     const opponentTiers: string[] = [];
@@ -875,6 +931,10 @@ export const updateMatchFacts = onDocumentWritten("matches/{matchId}", async (ev
       leadChanges,
       wasNeverBehind,
       winningHole,
+      
+      // DECIDED_ON_18: Clutch/choke stats
+      decidedOn18,
+      won18thHole,
 
       // Round context
       courseId,

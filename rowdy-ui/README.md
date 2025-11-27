@@ -184,6 +184,35 @@ Every stat tracked in `playerMatchFacts` and how it's calculated.
 | `leadChanges` | Count of times the leader changed during the match | How many times did the lead swap? |
 | `winningHole` | Hole number where match was clinched (`null` if went 18 or halved) | What hole did the match end on? |
 
+### Clutch Stats (18th Hole Pressure)
+
+These stats track matches that were decided by the 18th hole result.
+
+| Stat | Calculation | Plain English |
+|------|-------------|---------------|
+| `decidedOn18` | `true` if the 18th hole result directly determined the match outcome | Was the match decided on the final hole? |
+| `won18thHole` | `true` if your team won, `false` if lost, `null` if pushed | Did your team win the 18th hole? |
+
+**What counts as "Decided on 18":**
+- Match went to 18 holes (not closed early)
+- The 18th hole result changed the outcome
+
+**Scenarios:**
+| Going into 18 | 18th Hole | Match Result | Decided on 18? |
+|---------------|-----------|--------------|----------------|
+| AS (tied) | Team wins | Winner 1UP | ✅ Yes |
+| AS (tied) | Push | Match halved | ❌ No |
+| 1UP | Trailing team wins | Match halved | ✅ Yes |
+| 1UP | Push | Leader wins 1UP | ❌ No |
+| 1UP | Leader wins | Leader wins 2UP | ❌ No |
+| 2UP+ | Any | N/A | ❌ No (closed early) |
+
+**Derived Stats:**
+- **Clutch Win**: `decidedOn18 && won18thHole === true && outcome === "win"` — Won the match by winning 18
+- **Clutch Save**: `decidedOn18 && won18thHole === true && outcome === "halve"` — Saved a halve by winning 18 when down 1
+- **Choke Loss**: `decidedOn18 && won18thHole === false && outcome === "loss"` — Lost the match by losing 18
+- **Choke Halve**: `decidedOn18 && won18thHole === false && outcome === "halve"` — Let opponent halve by losing 18 when up 1
+
 ### Ball Usage Stats (Best Ball & Shamble Only)
 
 These stats track when your individual score was used as the team score. Best Ball compares **net** scores; Shamble compares **gross** scores.
