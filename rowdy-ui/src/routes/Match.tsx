@@ -1337,17 +1337,20 @@ export default function Match() {
         
         {/* MATCH STATUS HEADER */}
         <div className="space-y-3">
-          {/* Top row: Format pill on left, auth status on right */}
-          <div className="flex justify-between items-center">
-            <div 
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-              style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
-            >
-              <span>{formatRoundType(format)}</span>
+          {/* Top row: centered format pill with auth status on the right */}
+          <div className="relative">
+            <div className="flex justify-center">
+              <div 
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
+              >
+                <span>{formatRoundType(format)}</span>
+              </div>
             </div>
-            {/* Auth status - subtle right-aligned text */}
+
+            {/* Auth status - positioned to the right, inline with pill */}
             {editBlockReason && !roundLocked && !isMatchClosed && (
-              <div className="text-xs" style={{ color: "#94a3b8" }}>
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 text-xs pr-2" style={{ color: "#94a3b8" }}>
                 {editBlockReason === "login" && (
                   <Link to="/login" className="underline hover:text-slate-600">Login to edit</Link>
                 )}
